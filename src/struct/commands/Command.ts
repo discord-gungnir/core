@@ -114,8 +114,8 @@ export abstract class Command extends GungnirModule<Command.Events> {
 
 export namespace Command {
   export interface Events extends GungnirModule.Events {
-    ran: [Message, any];
-    error: [Message, Error];
-    inhibited: [Message, Inhibitor];
+    ran: (message: Message, res: any) => any;
+    error: (message: Message, error: Error) => any;
+    inhibited:(message: Message, inhibitor: Inhibitor) => any;
   }
 }

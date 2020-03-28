@@ -26,6 +26,6 @@ export abstract class Inhibitor extends GungnirModule<Inhibitor.Events> {
 
 export namespace Inhibitor {
   export interface Events extends GungnirModule.Events {
-    inhibit: [Message, Command];
+    inhibit: (message: Message, command: Command) => any;
   }
 }
