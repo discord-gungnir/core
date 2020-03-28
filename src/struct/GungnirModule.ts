@@ -6,7 +6,6 @@ export interface ModuleConstructor<M extends GungnirModule = any, H extends Gung
   new (handler: H, name: string): M;
 }
 
-// @ts-ignore
 export abstract class GungnirModule<Events extends GungnirModule.Events = any> extends EventEmitter {
   protected abstract init(): void;
 
@@ -46,16 +45,15 @@ export abstract class GungnirModule<Events extends GungnirModule.Events = any> e
   
 }
 
-// @ts-ignore
 export interface GungnirModule<Events extends GungnirModule.Events = any> {
-  // @ts-ignore
-  emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): this;
-  on<K extends keyof Events>(event: K, listener: Events[K]): boolean;
-  once<K extends keyof Events>(event: K, listener: Events[K]): boolean;
+  emit<K extends string & keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean;
+  on<K extends string & keyof Events>(event: K, listener: Events[K]): this;
+  once<K extends string & keyof Events>(event: K, listener: Events[K]): this;
 }
 
 export namespace GungnirModule {
   export interface Events {
-    deleted: () => any;
+    [key: string]: (...args: any[]) => void;
+    deleted(): void;
   }
 }
