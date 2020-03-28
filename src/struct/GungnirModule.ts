@@ -48,6 +48,7 @@ export abstract class GungnirModule<Events extends GungnirModule.Events = any> e
 
 // @ts-ignore
 export interface GungnirModule<Events extends GungnirModule.Events = any> {
+  // @ts-ignore
   emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): this;
   on<K extends keyof Events>(event: K, listener: Events[K]): boolean;
   once<K extends keyof Events>(event: K, listener: Events[K]): boolean;
@@ -55,7 +56,6 @@ export interface GungnirModule<Events extends GungnirModule.Events = any> {
 
 export namespace GungnirModule {
   export interface Events {
-    [key: string]: (...args: any[]) => any;
     deleted: () => any;
   }
 }
