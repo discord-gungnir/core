@@ -27,7 +27,8 @@ export class MyCommand extends Command {
 }
 ```
 
-You should then be able to call your command using `/mycommand`.
+You should then be able to call your command using `/mycommand`.\
+IMPORTANT: you need to add commands BEFORE creating the client.
 
 ## Command arguments
 ```ts
