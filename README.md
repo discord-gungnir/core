@@ -1,7 +1,7 @@
 # Gungnir Discord.js
 ![Gungnir Discord.js](https://nodei.co/npm/@gungnir/core.png?downloads=true&stars=true)
 
-Even though this package is compatible with JavaScript, it's designed to be used in TypeScript.\
+Even though this package is compatible with JavaScript, it's designed to be used with TypeScript.\
 As such, all code examples will be in TypeScript.
 
 ## Creating your client
@@ -28,7 +28,8 @@ export class MyCommand extends Command {
 ```
 
 You should then be able to call your command using `/mycommand`.\
-IMPORTANT: you need to add commands BEFORE creating the client.
+IMPORTANT: you need to add commands BEFORE creating the client.\
+The `@defineCommand` decorator also needs to be called after all other decorators, and as such should be on top of the other decorators.
 
 ### Command arguments
 The `@usage` decorator is used to define what arguments the command uses.
@@ -73,13 +74,15 @@ An argument is marked as a rest argument by appending `...` before it.\
 There can only be one rest argument and it needs to be the last argument.
 ```ts
 @defineCommand("say")
-@usage("...string")
+@usage("...")
 export class SayCommand extends Command {
   public run(message: Message, text: string) {
     return message.channel.send(text);
   }
 }
 ```
+Note: when it is the only type of an argument, `string` can be ommited.\
+`...` => `...string` / `?` => `string?` / `...?` => `...string?`
 
 #### Multiple argument types
 If an argument has multiple arguments, just separate the different types using `|`.
@@ -117,8 +120,34 @@ export class ResetIncrementCommand extends Command {
 }
 ```
 
+### Command options
+Those are the available options when creating a command:
+```ts
+interface CommandOptions {
+  restrictedTo?: "both" | "guild" | "dm"; // restrict the use of the command to guilds or dms
+  adminOnly?: boolean; // only admins will be able to use this command
+  ownerOnly?: boolean; // only owners of the bot will be able to use this command
+  allowBots?: boolean; // bots will be able to use this command
+  nsfw?: boolean; // nsfw commands
+  userPermissions?: PermissionResolvable; // permissions that are required by the user who uses this command
+  clientPermissions?: PermissionResolvable; // permissions that are required by the bot
+}
+```
+Each option has a matching decorator that lets you edit the command's settings.
+The `@guildOnly` and `@dmOnly` decorators are aliases for `@restrictedTo("guild")` and `@restrictedTo("dm")`.\
+The `@permissions` decorator sets both `userPermissions` and `clientPermissions` at the same time.
+```ts
+@defineCommand(["rule34", "r34"])
+@nsfw() @guildOnly() @usage("...")
+export class Rule34Command extends Command {
+  public run(message: Message, search: string) {
+    // ( ͡° ͜ʖ ͡°)
+  }
+}
+```
+
 ## Argument types
-When using the `@usage`, you might wonder what the default types are, well there you go:
+When using the `@usage` decorator, you might wonder what the default types are, well there you go:
 - string => Default argument type
 - number => A number
 - integer => An integer
@@ -138,7 +167,7 @@ When using the `@usage`, you might wonder what the default types are, well there
 This is done by creating a new `Resolver` and decorating it using the `@defineResolver` decorator.\
 Just like the `@defineCommand` decorator, this needs to be called before the client is created.\
 Resolvers need to return `null` if the value couldn't be resolved to a valid argument.\
-As an example, this is the default `GuildMember` `Resolver`:
+As an example, this is the default `GuildMemberResolver`:
 ```ts
 @defineResolver("member")
 export class GuildMemberResolver extends Resolver<GuildMember> {

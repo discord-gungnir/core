@@ -18,7 +18,7 @@ import "./inhibitors/default/GuildOnlyInhibitor";
 import "./inhibitors/default/NSFWInhibitor";
 import "./inhibitors/default/OwnerOnlyInhibitor";
 import "./inhibitors/default/ClientPermissionsInhibitor";
-import "./inhibitors/default/MemberPermissionsInhibitor";
+import "./inhibitors/default/UserPermissionsInhibitor";
 
 import { ResolverHandler } from "./resolvers/ResolverHandler";
 import { declaredResolvers } from "./resolvers/DefineResolver";

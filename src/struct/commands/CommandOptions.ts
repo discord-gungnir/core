@@ -9,7 +9,7 @@ export interface CommandOptions {
   ownerOnly?: boolean;
   allowBots?: boolean;
   nsfw?: boolean;
-  memberPermissions?: PermissionResolvable;
+  userPermissions?: PermissionResolvable;
   clientPermissions?: PermissionResolvable;
 }
 
@@ -62,7 +62,7 @@ export const nsfw = decorateOption("nsfw", true);
  * Require permissions from the user to use this command
  * @param value List of required permissions
  */
-export const memberPermissions = decorateOption("memberPermissions");
+export const userPermissions = decorateOption("userPermissions");
 
 /**
  * Require permissions from the client to use this command
@@ -76,7 +76,7 @@ export const clientPermissions = decorateOption("clientPermissions");
  */
 export function permissions(value: PermissionResolvable): CommandDecorator {
   return <T extends typeof Command>(command: T) => {
-    command = memberPermissions(value)(command);
+    command = userPermissions(value)(command);
     command = clientPermissions(value)(command);
     return command;
   }

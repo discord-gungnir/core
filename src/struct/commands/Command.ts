@@ -42,7 +42,7 @@ export abstract class Command extends GungnirModule<Command.Events> {
       ownerOnly: false,
       allowBots: false,
       nsfw: false,
-      memberPermissions: [],
+      userPermissions: [],
       clientPermissions: [],
       ...options
     };

@@ -5,7 +5,7 @@ import type { CommandOptions } from "../../commands/CommandOptions";
 
 export abstract class PermissionsInhibitor extends Inhibitor {
   protected abstract getMember(message: Message): GuildMember | null;
-  protected abstract readonly permissions: keyof Pick<CommandOptions, "memberPermissions"|"clientPermissions">;
+  protected abstract readonly permissions: keyof Pick<CommandOptions, "userPermissions"|"clientPermissions">;
   public inhibit(msg: Message, command: Command) {
     const member = this.getMember(msg);
     if (!member) return false;
