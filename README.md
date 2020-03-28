@@ -124,7 +124,7 @@ export class ResetIncrementCommand extends Command {
 Those are the available options when creating a command:
 ```ts
 interface CommandOptions {
-  restrictedTo?: "both" | "guild" | "dm"; // restrict the use of the command to guilds or dms
+  restrictedTo?: "both" | "guild" | "dm"; // restrict the use of this command to guilds or dms
   adminOnly?: boolean; // only admins will be able to use this command
   ownerOnly?: boolean; // only owners of the bot will be able to use this command
   allowBots?: boolean; // bots will be able to use this command
