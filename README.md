@@ -66,10 +66,10 @@ export class AgeCommand extends Command {
 An argument is marked as optional by appending `?` after it.
 ```ts
 import type { Message } from "discord.js";
-import { Command, defineCommand, guildOnly } from "@gungnir/core";
+import { Command, defineCommand } from "@gungnir/core";
 
 @defineCommand("roll")
-@guildOnly() @usage("natural?")
+@usage("natural?")
 export class RollCommand extends Command {
   public run(message: Message, size: number = 6) {
     const roll = Math.ceil(Math.random()*size);
@@ -82,7 +82,7 @@ export class RollCommand extends Command {
 An argument is marked as a rest argument by appending `...` before it.
 ```ts
 import type { Message } from "discord.js";
-import { Command, defineCommand, guildOnly } from "@gungnir/core";
+import { Command, defineCommand } from "@gungnir/core";
 
 @defineCommand("say")
 @usage("...string")
@@ -93,20 +93,44 @@ export class SayCommand extends Command {
 }
 ```
 
-####Multiple argument types
+#### Multiple argument types
 If an argument has multiple arguments, just separate the different types using `|`.
 ```ts
-import type { Message } from "discord.js";
-import { Command, defineCommand, guildOnly } from "@gungnir/core";
+import type { Message, GuildMember, User } from "discord.js";
+import { Command, defineCommand } from "@gungnir/core";
 
 @defineCommand("hello")
 @usage("member|user?")
 export class SayCommand extends Command {
-  public run(message: Message, user: GuildMember | user = message.author) {
+  public run(message: Message, user: GuildMember | User = message.author) {
     return message.channel.send(`Hello ${user}!`);
   }
 }
 ```
 
 ### Creating subcommands
+Let's say you have 2 commands, one called `increment`, that increments a number by a set value, and another called `increment reset` that resets that number.\
+You could create a single command that parses the arguments, but the framework lets you create subcommands very easily.
+```ts
+import type { Message } from "discord.js";
+import { Command, defineCommand } from "@gungnir/core";
 
+let number = 0;
+
+@defineCommand("increment")
+@usage("natural")
+export class IncrementCommand extends Command {
+  public run(message: Message, increment: number = 1) {
+    number += increment;
+    return msg.channel.send(`Number: ${number}`);
+  }
+}
+
+@defineCommand("reset", IncrementCommand)
+export class ResetIncrementCommand extends Command {
+  public run(message: Message) {
+    number = 0;
+    return msg.channel.send(`The number has been reset.`);
+  }
+}
+```
