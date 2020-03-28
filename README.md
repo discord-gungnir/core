@@ -1,4 +1,5 @@
 # Gungnir Discord.js
+![Gungnir Discord.js](https://nodei.co/npm/@gungnir/core.png?downloads=true&stars=true)
 
 Even though this package is compatible with JavaScript, it's designed to be used in TypeScript.\
 As such, all code examples will be in TypeScript.
