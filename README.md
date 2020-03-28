@@ -15,11 +15,9 @@ client.login();
 ```
 
 ## Commands
-This is how you create a simple command:
+Creating a command is done using the `@defineCommand` decorator.\
+If a command has multiple aliases, you can pass an array of names instead.
 ```ts
-import type { Message } from "discord.js";
-import { Command, defineCommand } from "@gungnir/core";
-
 @defineCommand("mycommand")
 export class MyCommand extends Command {
   public run(message: Message) {
@@ -34,9 +32,6 @@ IMPORTANT: you need to add commands BEFORE creating the client.
 ### Command arguments
 The `@usage` decorator is used to define what arguments the command uses.
 ```ts
-import type { Message, GuildMember } from "discord.js";
-import { Command, defineCommand, guildOnly } from "@gungnir/core";
-
 @defineCommand("handsome")
 @guildOnly() @usage("member")
 export class HandsomeCommand extends Command {
@@ -50,9 +45,6 @@ export class HandsomeCommand extends Command {
 #### Multiple arguments
 Multiple arguments are separated by spaces.
 ```ts
-import type { Message, GuildMember } from "discord.js";
-import { Command, defineCommand, guildOnly } from "@gungnir/core";
-
 @defineCommand("age")
 @guildOnly() @usage("member natural")
 export class AgeCommand extends Command {
@@ -65,9 +57,6 @@ export class AgeCommand extends Command {
 #### Optional arguments
 An argument is marked as optional by appending `?` after it.
 ```ts
-import type { Message } from "discord.js";
-import { Command, defineCommand } from "@gungnir/core";
-
 @defineCommand("roll")
 @usage("natural?")
 export class RollCommand extends Command {
@@ -79,11 +68,9 @@ export class RollCommand extends Command {
 ```
 
 #### Rest arguments
-An argument is marked as a rest argument by appending `...` before it.
+An argument is marked as a rest argument by appending `...` before it.\
+There can only be one rest argument and it needs to be the last argument.
 ```ts
-import type { Message } from "discord.js";
-import { Command, defineCommand } from "@gungnir/core";
-
 @defineCommand("say")
 @usage("...string")
 export class SayCommand extends Command {
@@ -96,9 +83,6 @@ export class SayCommand extends Command {
 #### Multiple argument types
 If an argument has multiple arguments, just separate the different types using `|`.
 ```ts
-import type { Message, GuildMember, User } from "discord.js";
-import { Command, defineCommand } from "@gungnir/core";
-
 @defineCommand("hello")
 @usage("member|user?")
 export class SayCommand extends Command {
@@ -112,13 +96,10 @@ export class SayCommand extends Command {
 Let's say you have 2 commands, one called `increment`, that increments a number by a set value, and another called `increment reset` that resets that number.\
 You could create a single command that parses the arguments, but the framework lets you create subcommands very easily.
 ```ts
-import type { Message } from "discord.js";
-import { Command, defineCommand } from "@gungnir/core";
-
 let number = 0;
 
 @defineCommand("increment")
-@usage("natural")
+@usage("natural?")
 export class IncrementCommand extends Command {
   public run(message: Message, increment: number = 1) {
     number += increment;
@@ -134,3 +115,39 @@ export class ResetIncrementCommand extends Command {
   }
 }
 ```
+
+## Argument types
+When using the `@usage`, you might wonder what the default types are, well there you go:
+- string => Default argument type
+- number => A number
+- integer => An integer
+- natural => Natural numbers (all positive integers (excluding 0))
+- percentage => Converts a percentage to a number between 0 and 1 (75% will be converted to 0.75)
+- user => a Discord.js `User`
+- member => a Discord.js `GuildMember`
+- role => a Discord.js `Role`
+- channel => a Discord.js `GuildChannel`
+- textchannel => a Discord.js `TextChannel`
+- voicechannel => a Discord.js `VoiceChannel`
+- message => a Discord.js `Message`
+- guild => a Discord.js `Guild`
+- command => a Gungnir `Command`
+
+### Custom argument types
+This is done by creating a new `Resolver` and decorating it using the `@defineResolver` decorator.\
+Just like the `@defineCommand` decorator, this needs to be called before the client is created.\
+Resolvers need to return `null` if the value couldn't be resolved to a valid argument.\
+As an example, this is the default `GuildMember` `Resolver`:
+```ts
+@defineResolver("member")
+export class GuildMemberResolver extends Resolver<GuildMember> {
+  public async resolve(str: string, msg: Message) {
+    if (!msg.guild) return null;
+    if (/^<@!?\d{18}>$/.test(str)) str = (str.match(/\d{18}/) as RegExpMatchArray)[0];
+    return msg.guild.members.resolve(str) ?? msg.guild.members.fetch(str).catch(() => null);
+  }
+}
+```
+
+## Inhibitors
+TODO
