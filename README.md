@@ -45,4 +45,4 @@ export class HandsomeCommand extends Command {
 ```
 
 The `@usage` decorator is used to define what arguments the command uses.\
-(you can also see the `@guildOnly` decorator) 
+(you can also see the `@guildOnly` decorator)
