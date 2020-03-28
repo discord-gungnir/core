@@ -1,0 +1,25 @@
+{
+  "name": "@gungnir/core",
+  "version": "1.0.0",
+  "description": "The core package for the Gungnir Discord.js framework.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/discord-gungnir/core.git"
+  },
+  "author": "Dragoteryx",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/discord-gungnir/core/issues"
+  },
+  "homepage": "https://github.com/discord-gungnir/core#readme",
+  "dependencies": {
+    "@types/node": "^13.9.5",
+    "@types/ws": "^7.2.3",
+    "discord.js": "^12.1.1"
+  }
+}
