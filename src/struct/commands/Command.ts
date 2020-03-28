@@ -31,7 +31,7 @@ export abstract class Command extends GungnirModule<Command.Events> {
   public readonly usage: CommandUsage
   public readonly options: Readonly<Required<CommandOptions>>;
   public readonly subcommands = new CommandHandler(this);
-  public constructor(handler: CommandHandler, name: string, usage: string | CommandUsage, options: CommandOptions = {}) {
+  public constructor(handler: CommandHandler, name: string, usage: string | CommandUsage = [], options: CommandOptions = {}) {
     super(handler, name);
     this.parent = handler.linkedTo instanceof Command ? handler.linkedTo : null;
     this.depth = this.parent ? this.parent.depth+1 : 0;

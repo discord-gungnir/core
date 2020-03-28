@@ -24,4 +24,15 @@ export class ResolverHandler extends GungnirHandler<Resolver<any>, ResolverConst
     }
     return CommandUsageBuilder.build();
   }
+  public usageToString(usage: CommandUsage): string {
+    const stringify: string[] = [];
+    for (const {resolvers, optional, rest} of usage) {
+      let str = "";
+      if (rest) str += "...";
+      str += resolvers.map(resolver => resolver.name).join("|");
+      if (optional) str += "?";
+      stringify.push(str);
+    }
+    return stringify.join(" ");
+  }
 }
