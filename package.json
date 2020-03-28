@@ -1,6 +1,6 @@
 {
   "name": "@gungnir/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The core package for the Gungnir Discord.js framework.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,6 +13,12 @@
   },
   "author": "Dragoteryx",
   "license": "ISC",
+  "keywords": [
+    "discord",
+    "bot",
+    "discord.js",
+    "framework"
+  ],
   "bugs": {
     "url": "https://github.com/discord-gungnir/core/issues"
   },
