@@ -1,6 +1,6 @@
 # Gungnir Discord.js
 
-Even though this package is compatible with JavaScript, it's designed to be used in TypeScript.
+Even though this package is compatible with JavaScript, it's designed to be used in TypeScript.\
 As such, all code examples will be in TypeScript.
 
 ## Creating your client
@@ -43,5 +43,5 @@ export class HandsomeCommand extends Command {
 }
 ```
 
-The @usage decorator is used to define what arguments the command uses.
-(you can also see the @guildOnly decorator) 
+The `@usage` decorator is used to define what arguments the command uses.\
+(you can also see the `@guildOnly` decorator) 
