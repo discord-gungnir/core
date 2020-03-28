@@ -26,7 +26,7 @@ export function usage(usage: string | CommandUsage) {
   // @ts-ignore
   return decorate(command => class extends command {
     public constructor(handler: CommandHandler, name: string, oldUsage: CommandUsage, options?: CommandOptions) {
-      super(handler, name, typeof usage == "string" ? handler.client.resolvers.stringToUsage(usage) : usage, options);
+      super(handler, name, usage, options);
     }
   });
 }
