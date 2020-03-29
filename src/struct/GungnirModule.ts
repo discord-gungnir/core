@@ -16,7 +16,7 @@ export abstract class GungnirModule<Events extends GungnirModule.Events = any> e
   public readonly client: GungnirClient;
   public constructor(public readonly handler: GungnirHandler<any>, name: string) {
     super();
-    if (!(/^[a-z0-9_-]$/i).test(name))
+    if (!(/^[a-z0-9_-]+$/i).test(name))
       throw new GungnirError(INVALID_MODULE_NAME(name));
     this.client = this.handler.client;
     this.name = name.toLowerCase();
