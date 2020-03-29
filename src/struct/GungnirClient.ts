@@ -102,7 +102,7 @@ export class GungnirClient extends Client {
         for (const resolver of resolvers) {
           if (resolver.disabled) continue;
           const res = await resolver.resolve(arg, msg);
-          if (res) {
+          if (res !== null) {
             resolved = res;
             break;
           }
