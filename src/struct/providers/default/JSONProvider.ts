@@ -1,9 +1,9 @@
-import { Provider, CachedProvider } from "../Provider";
+import { Provider, CachedProviderConstructor } from "../Provider";
 import { promises as fsp } from "fs";
 import path from "path";
 
 export class JSONProvider extends Provider {
-  declare public static readonly cached: CachedProvider<typeof JSONProvider>;
+  declare public static readonly cached: CachedProviderConstructor<typeof JSONProvider>;
   public constructor(public readonly path: string) {super()}
 
   private folder(table: string) {
