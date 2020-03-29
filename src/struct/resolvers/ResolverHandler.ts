@@ -5,7 +5,7 @@ import { GungnirError } from "../../util/GungnirError";
 
 const UNKNOWN_RESOLVER = (name: string) => `unknown Resolver '${name}'.`;
 
-export class ResolverHandler extends GungnirHandler<Resolver<any>, ResolverConstructor> {
+export class ResolverHandler extends GungnirHandler<Resolver, ResolverConstructor> {
   public stringToUsage(usage: string): CommandUsage {
     if (usage == "") return [];
     for (let arg of usage.split(/\s+/g)) {

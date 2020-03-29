@@ -144,18 +144,23 @@ export class GungnirClient extends Client {
   public get owners(): Collection<Snowflake, User> {
     return new Collection(Object.entries(this.#owners));
   }
-  public isOwner(user: User): boolean {
-    return this.#owners[user.id] !== undefined;
+  public isOwner(user: Snowflake | User): boolean {
+    return this.#owners[typeof user == "string" ? user : user.id] !== undefined;
   }
-  public setOwner(user: User, owner: boolean): this {
+  public async setOwner(user: Snowflake | User, owner: boolean): Promise<User | null> {
+    if (typeof user == "string") {
+      const resolved = await (this.users.resolve(user) ?? this.users.fetch(user as string).catch(() => null));
+      if (resolved) user = resolved;
+      else return null;
+    }
     if (owner) this.#owners[user.id] = user;
     else delete this.#owners[user.id];
-    return this;
+    return user;
   }
-  public addOwner(user: User): this {
+  public addOwner(user: Parameters<GungnirClient["setOwner"]>[0]) {
     return this.setOwner(user, true);
   }
-  public removeOwner(user: User): this {
+  public removeOwner(user: Parameters<GungnirClient["setOwner"]>[0]) {
     return this.setOwner(user, false);
   }
 

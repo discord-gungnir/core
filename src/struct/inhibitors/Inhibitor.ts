@@ -28,4 +28,12 @@ export namespace Inhibitor {
   export interface Events extends GungnirModule.Events {
     inhibit: (message: Message, command: Command) => any;
   }
+
+  export function make(inhibit: (this: Inhibitor, message: Message, command: Command) => boolean | Promise<boolean>): InhibitorConstructor {
+    return class extends Inhibitor {
+      public inhibit(msg: Message, command: Command): boolean | Promise<boolean> {
+        return inhibit.call(this, msg, command);
+      }
+    }
+  }
 }

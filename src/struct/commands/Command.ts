@@ -17,6 +17,14 @@ export interface CommandDecorator {
   <T extends typeof Command>(command: T): T;
 }
 
+export interface TypedCommand<P extends any[], R> extends Command {
+  run(message: Message, ...args: P): R;
+}
+
+export interface TypedCommandConstructor<P extends any[], R> {
+  new (handler: CommandHandler, name: string): TypedCommand<P, R>;
+}
+
 // Command
 
 /**
@@ -107,7 +115,6 @@ export abstract class Command extends GungnirModule<Command.Events> {
       message.member?.commands.get(name) ??
       message.channel.commands.get(name) ??
       message.member?.voice.channel?.commands.get(name) ??
-      message.member?.roles?.highest.commands.get(name) ??
       message.guild?.commands.get(name) ??
       message.client.commands.get(name);
     if (!command) return null;
@@ -126,5 +133,20 @@ export namespace Command {
     ran: (message: Message, res: any) => any;
     error: (message: Message, error: Error) => any;
     inhibited:(message: Message, inhibitor: Inhibitor) => any;
+  }
+
+  export function make<P extends any[], R>(usage: string | CommandUsage, run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): TypedCommandConstructor<P, R> {
+    return class extends Command {
+      public constructor(handler: CommandHandler, name: string) {
+        super(handler, name, usage, options);
+      }
+      public run(msg: Message, ...args: P): R {
+        // @ts-ignore
+        return run.call(this, msg, ...args);
+      }
+    }
+  }
+  export function reflect<T extends any[]>(usage: string | CommandUsage, options?: CommandOptions) {
+    return Command.make<T, [Message, T]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
   }
 }

@@ -11,7 +11,6 @@ import "./struct/extensions/DMChannel";
 import "./struct/extensions/Guild";
 import "./struct/extensions/GuildMember";
 import "./struct/extensions/Message";
-import "./struct/extensions/Role";
 import "./struct/extensions/TextBasedChannel";
 import "./struct/extensions/TextChannel";
 import "./struct/extensions/User";
