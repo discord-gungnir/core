@@ -135,7 +135,7 @@ export namespace Command {
     inhibited:(message: Message, inhibitor: Inhibitor) => any;
   }
 
-  export function make<P extends any[], R>(usage: string | CommandUsage, run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): TypedCommandConstructor<P, R> {
+  export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): TypedCommandConstructor<P, R> {
     return class extends Command {
       public constructor(handler: CommandHandler, name: string) {
         super(handler, name, usage, options);
@@ -146,7 +146,7 @@ export namespace Command {
       }
     }
   }
-  export function reflect<T extends any[]>(usage: string | CommandUsage, options?: CommandOptions) {
+  export function reflect<T extends any[]>(usage: string | CommandUsage = [], options?: CommandOptions) {
     return Command.make<T, [Message, T]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
   }
 }
