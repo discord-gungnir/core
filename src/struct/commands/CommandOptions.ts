@@ -84,10 +84,12 @@ export function permissions(value: PermissionResolvable): CommandDecorator {
 
 /**
  * Restrict this command to guilds
+ * @param value Is this command restricted to guilds
  */
-export const guildOnly = () => restrictedTo("guild");
+export const guildOnly = (value: boolean = true) => restrictedTo(value ? "guild" : "both");
 
 /**
  * Restrict this command to DMs
+ * @param value Is this command restricted to DMs
  */
-export const dmOnly = () => restrictedTo("dm");
+export const dmOnly = (value: boolean = true) => restrictedTo(value ? "dm" : "both");

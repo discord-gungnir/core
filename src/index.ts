@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 export * from "./struct/commands/Command";
 export * from "./struct/commands/CommandDecorators";
 export * from "./struct/commands/CommandHandler";

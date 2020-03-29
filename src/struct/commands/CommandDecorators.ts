@@ -42,3 +42,24 @@ export function commandError(onError: (this: Command, message: Message, error: E
 export function commandInhibited(onInhibited: (this: Command, message: Message, inhibitor: Inhibitor) => void) {
   return initCommand(command => command.on("inhibited", onInhibited.bind(command)));
 }
+
+/**
+ * Define metadata on the command when it is created using the Reflect API
+ * @param key Metadata key
+ * @param value Metadata value
+ */
+export function commandMetadata(metadataKey: string, metadataValue: any) {
+  return initCommand(command => Reflect.defineMetadata(metadataKey, metadataValue, command));
+}
+
+/**
+ * Set the command's description
+ * @param value The command's description
+ */
+export const description = (value: string) => commandMetadata("description", value);
+
+/**
+ * Set the command's group
+ * @param value The command's group
+ */
+export const group = (value: string) => commandMetadata("group", value);

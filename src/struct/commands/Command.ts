@@ -92,6 +92,13 @@ export abstract class Command extends GungnirModule<Command.Events> {
     return this.unbindAliases(...this.aliases);
   }
 
+  public get description(): string {
+    return Reflect.getMetadata("description", this) ?? "";
+  }
+  public get group(): string | null {
+    return Reflect.getMetadata("group", this) ?? this.parent?.group ?? null;
+  }
+
   public static resolve(names: [string, ...string[]], message: Message): Command | null {
     names = [...names] as [string, ...string[]];
     const name = names.shift() as string;

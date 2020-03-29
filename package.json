@@ -1,6 +1,6 @@
 {
   "name": "@gungnir/core",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "The core package for the Gungnir Discord.js framework.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,6 +27,7 @@
     "@types/node": "^13.9.5",
     "@types/ws": "^7.2.3",
     "discord.js": "^12.1.1",
+    "reflect-metadata": "^0.1.13",
     "url-regex": "^5.0.0"
   }
 }

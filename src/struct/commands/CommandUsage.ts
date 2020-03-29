@@ -20,7 +20,7 @@ const decorate = (fn: <T extends typeof Command>(command: T) => T): CommandDecor
 
 /**
  * Set a command's usage, if given a string, will convert it
- * @param syntax The command's usage
+ * @param usage The command's usage
  */
 export function usage(usage: string | CommandUsage) {
   // @ts-ignore
