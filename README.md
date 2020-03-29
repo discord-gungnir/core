@@ -149,10 +149,11 @@ export class Rule34Command extends Command {
 ## Argument types
 When using the `@usage` decorator, you might wonder what the default types are, well there you go:
 - string => Default argument type
-- number => A number
-- integer => An integer
-- natural => Natural numbers (all positive integers (excluding 0))
-- percentage => Converts a percentage to a number between 0 and 1 (75% will be converted to 0.75)
+- number => a number
+- integer => an integer
+- natural => a natural number (all positive integers excluding 0)
+- percentage => converts a percentage to a number between 0 and 1 (75% will be converted to 0.75)
+- url => checks if the string is a valid URL using the `url-regex` package
 - user => a Discord.js `User`
 - member => a Discord.js `GuildMember`
 - role => a Discord.js `Role`

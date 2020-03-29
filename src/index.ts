@@ -24,8 +24,7 @@ export * from "./struct/inhibitors/default/DMOnlyInhibitor";
 export * from "./struct/inhibitors/default/GuildOnlyInhibitor";
 export * from "./struct/inhibitors/default/NSFWInhibitor";
 export * from "./struct/inhibitors/default/OwnerOnlyInhibitor";
-export * from "./struct/inhibitors/default/ClientPermissionsInhibitor";
-export * from "./struct/inhibitors/default/UserPermissionsInhibitor";
+export * from "./struct/inhibitors/default/PermissionsInhibitor";
 
 export * from "./struct/providers/Provided";
 export * from "./struct/providers/Provider";
@@ -46,6 +45,7 @@ export * from  "./struct/resolvers/default/PercentageResolver";
 export * from "./struct/resolvers/default/RoleResolver";
 export * from "./struct/resolvers/default/StringResolver";
 export * from "./struct/resolvers/default/TextChannelResolver";
+export * from "./struct/resolvers/default/URLResolver";
 export * from "./struct/resolvers/default/UserResolver";
 export * from "./struct/resolvers/default/VoiceChannelResolver";
 

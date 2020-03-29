@@ -17,8 +17,7 @@ import "./inhibitors/default/DMOnlyInhibitor";
 import "./inhibitors/default/GuildOnlyInhibitor";
 import "./inhibitors/default/NSFWInhibitor";
 import "./inhibitors/default/OwnerOnlyInhibitor";
-import "./inhibitors/default/ClientPermissionsInhibitor";
-import "./inhibitors/default/UserPermissionsInhibitor";
+import "./inhibitors/default/PermissionsInhibitor";
 
 import { ResolverHandler } from "./resolvers/ResolverHandler";
 import { declaredResolvers } from "./resolvers/DefineResolver";
@@ -34,6 +33,7 @@ import "./resolvers/default/PercentageResolver";
 import "./resolvers/default/RoleResolver";
 import "./resolvers/default/StringResolver";
 import "./resolvers/default/TextChannelResolver";
+import "./resolvers/default/URLResolver";
 import "./resolvers/default/UserResolver";
 import "./resolvers/default/VoiceChannelResolver";
 
