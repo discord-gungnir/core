@@ -4,6 +4,7 @@ import { defineResolver } from "../DefineResolver";
 @defineResolver("number")
 export class NumberResolver extends Resolver<number> {
   public resolve(str: string) {
-    return /^\d+$/.test(str) ? Number(str) : null;
+    const nb = Number(str);
+    return isNaN(nb) ? null : nb;
   }
 }
