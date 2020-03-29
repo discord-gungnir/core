@@ -4,6 +4,6 @@ import { defineResolver } from "../DefineResolver";
 @defineResolver("percentage")
 export class PercentageResolver extends Resolver<number> {
   public resolve(str: string) {
-    return /^\d+%?$/.test(str) ? Number(str.replace("%", "")) : null;
+    return /^\d+%?$/.test(str) ? Number(str.replace("%", ""))/100 : null;
   }
 }
