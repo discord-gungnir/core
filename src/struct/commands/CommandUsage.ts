@@ -1,7 +1,7 @@
 import { GungnirError } from "../../util/GungnirError";
 import type { CommandHandler } from "./CommandHandler";
 import type { CommandOptions } from "./CommandOptions";
-import type { Command, CommandDecorator } from "./Command";
+import type { Command, CommandDecorator, CommandConstructor } from "./Command";
 import type { Message } from "discord.js";
 import type { Resolver } from "../resolvers/Resolver";
 
@@ -22,8 +22,9 @@ export type CommandUsage = readonly Readonly<CommandArgument>[];
  */
 export function usage(usage: string | CommandUsage): CommandDecorator {
   // @ts-ignore
-  return <T extends typeof Command>(command: T) => class extends command {
+  return <T extends CommandConstructor>(command: T) => class extends command {
     public constructor(handler: CommandHandler, name: string, oldUsage: CommandUsage, options?: CommandOptions) {
+      // @ts-ignore
       super(handler, name, usage, options);
     }
   }

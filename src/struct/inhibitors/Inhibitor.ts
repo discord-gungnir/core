@@ -10,10 +10,6 @@ export interface InhibitorConstructor {
 }
 
 export interface InhibitorDecorator {
-  <T extends typeof Inhibitor>(inhibitor: T): T;
-}
-
-export interface InhibitorConstructorDecorator {
   <T extends InhibitorConstructor>(inhibitor: T): T;
 }
 

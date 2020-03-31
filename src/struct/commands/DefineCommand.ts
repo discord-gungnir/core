@@ -1,4 +1,4 @@
-import type { CommandConstructor, CommandConstructorDecorator } from "./Command";
+import type { CommandConstructor, CommandDecorator } from "./Command";
 
 interface CommandToDeclare {
   names: [string, ...string[]];
@@ -17,9 +17,9 @@ export function getChildren(command: CommandConstructor) {
  * @param names The name(s) of the command
  * @param parent The parent command if any
  */
-export function defineCommand(name: string, parent?: CommandConstructor): CommandConstructorDecorator;
-export function defineCommand(names: [string, ...string[]], parent?: CommandConstructor): CommandConstructorDecorator;
-export function defineCommand(names: string | [string, ...string[]], parent?: CommandConstructor): CommandConstructorDecorator {
+export function defineCommand(name: string, parent?: CommandConstructor): CommandDecorator;
+export function defineCommand(names: [string, ...string[]], parent?: CommandConstructor): CommandDecorator;
+export function defineCommand(names: string | [string, ...string[]], parent?: CommandConstructor): CommandDecorator {
   return <T extends CommandConstructor>(command: T) => {
     if (!Array.isArray(names)) names = [names];
     const arr = parent ? getChildren(parent) : declaredCommands;
