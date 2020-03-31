@@ -1,7 +1,6 @@
 import { GungnirHandler } from "../GungnirHandler";
-import { Command, CommandConstructor } from "./Command";
+import { Command, CommandConstructor, CommandReturnType, InferCommandTypes } from "./Command";
 import { aliasesIndex } from "./CommandAliases";
-import type { Message } from "discord.js";
 
 export class CommandHandler extends GungnirHandler<Command, CommandConstructor> {
   #aliases = aliasesIndex(this);
@@ -12,9 +11,9 @@ export class CommandHandler extends GungnirHandler<Command, CommandConstructor> 
     return super.get(name) ?? this.#aliases.get(name.toLowerCase()) ?? null;
   }
 
-  public create<T extends CommandConstructor>(name: string, command: T): InstanceType<T>;
-  public create<T extends CommandConstructor>(names: [string, ...string[]], command: T): InstanceType<T>;
-  public create<T extends CommandConstructor>(names: string | [string, ...string[]], command: T): InstanceType<T> {
+  public create<C extends CommandConstructor>(name: string, command: C): InstanceType<C>;
+  public create<C extends CommandConstructor>(names: [string, ...string[]], command: C): InstanceType<C>;
+  public create<C extends CommandConstructor>(names: string | [string, ...string[]], command: C): InstanceType<C> {
     if (!Array.isArray(names)) names = [names];
     const name = names.shift() as string;
     const created = super.create(name, command);
@@ -29,23 +28,18 @@ export class CommandHandler extends GungnirHandler<Command, CommandConstructor> 
     return this;
   }
 
-  public promise<T extends CommandConstructor>(name: string, command: T): Promise<ReturnType<InstanceType<T>["run"]>>;
-  public promise<T extends CommandConstructor>(names: [string, ...string[]], command: T): Promise<ReturnType<InstanceType<T>["run"]>>;
-  public promise<T extends CommandConstructor>(names: any, command: T): Promise<ReturnType<InstanceType<T>["run"]>> {
+  public promise<C extends CommandConstructor>(name: string, command: C): Promise<CommandReturnType<InstanceType<C>>>;
+  public promise<C extends CommandConstructor>(names: [string, ...string[]], command: C): Promise<CommandReturnType<InstanceType<C>>>;
+  public promise<C extends CommandConstructor>(names: any, command: C): Promise<CommandReturnType<InstanceType<C>>> {
     return new Promise((resolve, reject) => {
-      // @ts-ignore
-      this.create(names, class extends command {
-        public async run(msg: Message, ...args: any[]): Promise<any> {
-          try {
-            // @ts-ignore
-            const res = await super.run(msg, ...args);
-            this.delete();
-            resolve(res);
-          } catch(err) {
-            this.delete();
-            reject(err);
-          }
-        }
+      const created = this.create(names, command);
+      (created as InferCommandTypes<typeof created>)
+      .once("run", (msg, args, res) => {
+        created.delete();
+        resolve(res);
+      }).once("error", (msg, args, err) => {
+        created.delete();
+        reject(err);
       })
     });
   }

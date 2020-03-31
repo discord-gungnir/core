@@ -9,7 +9,7 @@ export interface ModuleConstructor<M extends GungnirModule = any, H extends Gung
 
 const INVALID_MODULE_NAME = (name: string) => `${name.toLowerCase()} isn't a valid module name.`;
 
-export abstract class GungnirModule<Events extends GungnirModule.Events = any> extends EventEmitter {
+export abstract class GungnirModule<E extends GungnirModule.Events = any> extends EventEmitter {
   protected abstract init(): void;
 
   public readonly name: string;
@@ -50,10 +50,10 @@ export abstract class GungnirModule<Events extends GungnirModule.Events = any> e
   
 }
 
-export interface GungnirModule<Events extends GungnirModule.Events = any> {
-  emit<K extends string & keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean;
-  on<K extends string & keyof Events>(event: K, listener: Events[K]): this;
-  once<K extends string & keyof Events>(event: K, listener: Events[K]): this;
+export interface GungnirModule<E extends GungnirModule.Events = any> {
+  emit<K extends string & keyof E>(event: K, ...args: Parameters<E[K]>): boolean;
+  on<K extends string & keyof E>(event: K, listener: E[K]): this;
+  once<K extends string & keyof E>(event: K, listener: E[K]): this;
 }
 
 export namespace GungnirModule {

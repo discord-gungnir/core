@@ -2,45 +2,43 @@ import type { Command, CommandDecorator } from "./Command";
 import type { Message } from "discord.js";
 import type { Inhibitor } from "../inhibitors/Inhibitor";
 
-const decorate = (fn: <T extends typeof Command>(command: T) => T): CommandDecorator => fn;
-
 /**
  * Define a callback that is called when the command is created
  * @param onInit Called after the command is created
  */
-export function initCommand(onInit: (command: Command) => any) {
+export function initCommand<P extends any[], R = any>(onInit: (command: Command<P, R>) => any): CommandDecorator {
   // @ts-ignore
-  return decorate(command => class extends command {
+  return <T extends typeof Command>(command: T) => class extends command {
     public constructor(...args: any[]) {
       // @ts-ignore
       super(...args);
       onInit(this);
     }
-  });
+  }
 }
 
 /** 
  * Define a callback that is called after the command ran
- * @param onRan Called after the command ran
+ * @param onRun Called after the command ran
 */
-export function commandRan(onRan: (this: Command, message: Message, res: any) => void) {
-  return initCommand(command => command.on("ran", onRan.bind(command)));
+export function commandRun<P extends any[], R = any>(onRun: (this: Command<P, R>, message: Message, args: P, result: R) => void) {
+  return initCommand<P, R>(command => command.on("run", onRun.bind(command)));
 }
 
 /**
  * Define a callback that is called when the command errors
  * @param onError Called when the command errors
  */
-export function commandError(onError: (this: Command, message: Message, error: Error) => void) {
-  return initCommand(command => command.on("error", onError.bind(command)));
+export function commandError<P extends any[], R = any>(onError: (this: Command<P, R>, message: Message, args: P, error: Error) => void) {
+  return initCommand<P, R>(command => command.on("error", onError.bind(command)));
 }
 
 /**
  * Define a callback that is called when the command is inhibited
  * @param onInhibited Called whe the command is inhibited
  */
-export function commandInhibited(onInhibited: (this: Command, message: Message, inhibitor: Inhibitor) => void) {
-  return initCommand(command => command.on("inhibited", onInhibited.bind(command)));
+export function commandInhibited<P extends any[], R = any>(onInhibited: (this: Command<P, R>, message: Message, inhibitor: Inhibitor) => void) {
+  return initCommand<P, R>(command => command.on("inhibited", onInhibited.bind(command)));
 }
 
 /**

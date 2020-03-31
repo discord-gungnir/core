@@ -13,18 +13,16 @@ export interface CommandOptions {
   clientPermissions?: PermissionResolvable;
 }
 
-const decorate = (fn: <T extends typeof Command>(command: T) => T): CommandDecorator => fn;
-
 function decorateOption<T extends keyof CommandOptions>(key: T): (value: NonNullable<CommandOptions[T]>) => CommandDecorator;
 function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue: CommandOptions[T]): (value?: NonNullable<CommandOptions[T]>) => CommandDecorator;
 function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: CommandOptions[T]) {
   return (value?: NonNullable<CommandOptions[T]>) => {
     // @ts-ignore
-    return decorate(command => class extends command {
+    return <T extends typeof Command>(command: T) => class extends command {
       public constructor(handler: CommandHandler, name: string, syntax: CommandUsage, options: CommandOptions = {}) {
         super(handler, name, syntax, {...options, [key]: value ?? defaultValue});
       }
-    });
+    }
   }
 }
 
@@ -36,25 +34,25 @@ export const restrictedTo = decorateOption("restrictedTo");
 
 /**
  * Set the command to owner only
- * @param value Whether or not the command is owner only (defaults to true)
+ * @param value Whether or not the command is owner only
  */
 export const ownerOnly = decorateOption("ownerOnly", true);
 
 /**
  * Set the command to admin only
- * @param value Whether or not the command is admin only (defaults to true)
+ * @param value Whether or not the command is admin only
  */
 export const adminOnly = decorateOption("adminOnly", true);
 
 /**
  * Allow bots to use this command (use carefully)
- * @param value Whether or not this command can be used by bots (defaults to true)
+ * @param value Whether or not this command can be used by bots
  */
 export const allowBots = decorateOption("allowBots", true);
 
 /**
  * Block this command when used in a channel that isn't NSFW
- * @param value Whether or not this command is (defaults to true)
+ * @param value Whether or not this command is NSFW
  */
 export const nsfw = decorateOption("nsfw", true);
 

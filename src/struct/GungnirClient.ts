@@ -1,15 +1,13 @@
-import { Client, ClientOptions, User, Message, Snowflake, Collection, GuildMember } from "discord.js";
+import { Client, ClientOptions, User, Message, Snowflake, Collection } from "discord.js";
 import { Prefix, PrefixResolvable } from "./Types";
 import type { Provider } from "./providers/Provider";
 import { ClientEvents } from "discord.js";
 
-import { GungnirHandler } from "./GungnirHandler";
-
-import { Command } from "./commands/Command";
+import { Command, InferCommandTypes } from "./commands/Command";
 import { CommandHandler } from "./commands/CommandHandler";
 import { declaredCommands } from "./commands/DefineCommand";
 
-import type { Inhibitor, InhibitorConstructor } from "./inhibitors/Inhibitor";
+import { Inhibitor, InhibitorConstructor, InhibitorHandler } from "./inhibitors/Inhibitor";
 import { declaredInhibitors } from "./inhibitors/DefineInhibitor";
 import "./inhibitors/default/AdminOnlyInhibitor";
 import "./inhibitors/default/DenyBotsInhibitor";
@@ -44,12 +42,16 @@ export interface GungnirClientOptions extends ClientOptions {
   provider?: Provider;
 }
 
+declare class TestCommand extends Command {
+  public run(msg: Message, str: string, nb: number): boolean;
+}
+
 export class GungnirClient extends Client {
   public readonly prefix: PrefixResolvable;
   public readonly provider: Provider | null;
 
   public readonly commands = new CommandHandler(this);
-  public readonly inhibitors = new GungnirHandler<Inhibitor, InhibitorConstructor>(this);
+  public readonly inhibitors = new InhibitorHandler(this);
   public readonly resolvers = new ResolverHandler(this);
 
   public constructor(options: GungnirClientOptions = {}) {
@@ -95,17 +97,12 @@ export class GungnirClient extends Client {
       for (const {resolvers, rest, optional} of command.usage) {
         let resolved;
         const arg = rest ? split.join(" ") : (split[0] ?? "");
-        if (!optional && arg.length == 0) {
-          this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
-          return;
-        }
+        if (!optional && arg.length == 0)
+          return this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
         for (const resolver of resolvers) {
           if (resolver.disabled) continue;
-          const res = await resolver.resolve(arg, msg);
-          if (res !== null) {
-            resolved = res;
-            break;
-          }
+          resolved = await resolver.resolve(arg, msg) ?? null;
+          if (resolved) break;
         }
         if (resolved) {
           args.push(resolved);
@@ -113,23 +110,18 @@ export class GungnirClient extends Client {
           else split.shift();
         } else if (optional) {
           args.push(undefined);
-        } else {
-          this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
-          return;
-        }
+        } else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
       }
-      if (split.length > 0) {
-        this.emit("syntaxError", msg, command, "TOO_MANY_ARGUMENTS");
-        return;
-      }
+      if (split.length > 0)
+        return this.emit("syntaxError", msg, command, "TOO_MANY_ARGUMENTS");
       this.emit("beforeCommand", msg, command, null);
       try {
         const res = await command.run(msg, ...args);
         this.emit("commandRan", msg, command, res);
-        command.emit("ran", msg, res);
+        command.emit("ran", msg, args, res);
       } catch(err) {
         this.emit("commandError", msg, command, err);
-        command.emit("error", msg, err);
+        command.emit("error", msg, args, err);
       }
     });
   }

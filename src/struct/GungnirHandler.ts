@@ -2,7 +2,7 @@ import { GungnirModule, ModuleConstructor } from "./GungnirModule";
 import { ClientOrHasClient } from "./Types";
 import { GungnirClient } from "./GungnirClient";
 
-export class GungnirHandler<M extends GungnirModule = any, C extends ModuleConstructor<M> = any> {
+export abstract class GungnirHandler<M extends GungnirModule, C extends ModuleConstructor<M> = ModuleConstructor<M>> {
   public readonly client: GungnirClient;
   public constructor(public readonly linkedTo: ClientOrHasClient) {
     this.client = "client" in linkedTo ? linkedTo.client : linkedTo;

@@ -6,11 +6,15 @@ import { GungnirHandler } from "../GungnirHandler";
 // types
 
 export interface InhibitorConstructor {
-  new (handler: GungnirHandler<Inhibitor>, name: string): Inhibitor;
+  new (handler: InhibitorHandler, name: string): Inhibitor;
 }
 
 export interface InhibitorDecorator {
-  <T extends typeof Inhibitor>(command: T): T | void;
+  <T extends typeof Inhibitor>(inhibitor: T): T;
+}
+
+export interface InhibitorConstructorDecorator {
+  <T extends InhibitorConstructor>(inhibitor: T): T;
 }
 
 // Inhibitor
@@ -37,3 +41,5 @@ export namespace Inhibitor {
     }
   }
 }
+
+export class InhibitorHandler extends GungnirHandler<Inhibitor, InhibitorConstructor> {}

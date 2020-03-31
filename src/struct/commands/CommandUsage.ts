@@ -16,19 +16,17 @@ export type CommandUsage = readonly Readonly<CommandArgument>[];
 
 // decorators
 
-const decorate = (fn: <T extends typeof Command>(command: T) => T): CommandDecorator => fn;
-
 /**
  * Set a command's usage, if given a string, will convert it
  * @param usage The command's usage
  */
-export function usage(usage: string | CommandUsage) {
+export function usage(usage: string | CommandUsage): CommandDecorator {
   // @ts-ignore
-  return decorate(command => class extends command {
+  return <T extends typeof Command>(command: T) => class extends command {
     public constructor(handler: CommandHandler, name: string, oldUsage: CommandUsage, options?: CommandOptions) {
       super(handler, name, usage, options);
     }
-  });
+  }
 }
 
 // CommandUsageBuilder

@@ -1,8 +1,4 @@
-import type { InhibitorConstructor } from "./Inhibitor";
-
-interface DefineInhibitorDecorator {
-  <T extends InhibitorConstructor>(command: T): T;
-}
+import type { InhibitorConstructor, InhibitorConstructorDecorator } from "./Inhibitor";
 
 interface InhibitorToDeclare {
   name: string;
@@ -10,7 +6,7 @@ interface InhibitorToDeclare {
 }
 
 export const declaredInhibitors: InhibitorToDeclare[] = [];
-export function defineInhibitor(name: string): DefineInhibitorDecorator {
+export function defineInhibitor(name: string): InhibitorConstructorDecorator {
   return <T extends InhibitorConstructor>(inhibitor: T) => {
     declaredInhibitors.push({name, inhibitor});
     return inhibitor;

@@ -9,34 +9,35 @@ import { getChildren } from "./DefineCommand";
 
 // types
 
-export interface CommandConstructor {
-  new (handler: CommandHandler, name: string): Command;
+export interface CommandConstructor<P extends any[] = any[], R = any> {
+  new (handler: CommandHandler, name: string): Command<P, R>;
 }
 
 export interface CommandDecorator {
   <T extends typeof Command>(command: T): T;
 }
 
-export interface TypedCommand<P extends any[], R> extends Command {
-  run(message: Message, ...args: P): R;
+export interface CommandConstructorDecorator<P extends any[] = any[], R = any> {
+  <T extends CommandConstructor<P, R>>(command: T): T;
 }
 
-export interface TypedCommandConstructor<P extends any[], R> {
-  new (handler: CommandHandler, name: string): TypedCommand<P, R>;
-}
+export type CommandParameters<T extends Command> = T extends Command<infer P, any> ? P : never;
+export type CommandReturnType<T extends Command> = T extends Command<any, infer R> ? R : never;
+
+export type InferCommandTypes<T extends Command> = Command<CommandParameters<T>, CommandReturnType<T>>;
 
 // Command
 
 /**
  * The base Command to extend to create new commands
  */
-export abstract class Command extends GungnirModule<Command.Events> {
-  public abstract run(message: Message, ...args: any[]): any;
+export abstract class Command<P extends any[] = any[], R = any> extends GungnirModule<Command.Events<P, R>> {
+  public abstract run(message: Message, ...args: P): R;
 
   declare public readonly handler: CommandHandler;
   public readonly parent: Command | null;
   public readonly depth: number;
-  public readonly usage: CommandUsage
+  public readonly usage: CommandUsage;
   public readonly options: Readonly<Required<CommandOptions>>;
   public readonly subcommands = new CommandHandler(this);
   public constructor(handler: CommandHandler, name: string, usage: string | CommandUsage = [], options: CommandOptions = {}) {
@@ -129,13 +130,13 @@ export abstract class Command extends GungnirModule<Command.Events> {
 }
 
 export namespace Command {
-  export interface Events extends GungnirModule.Events {
-    ran: (message: Message, res: any) => any;
-    error: (message: Message, error: Error) => any;
+  export interface Events<P, R> extends GungnirModule.Events {
+    run: (message: Message, args: P, result: R) => any;
+    error: (message: Message, args: P, error: Error) => any;
     inhibited:(message: Message, inhibitor: Inhibitor) => any;
   }
 
-  export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): TypedCommandConstructor<P, R> {
+  export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): CommandConstructor<P, R> {
     return class extends Command {
       public constructor(handler: CommandHandler, name: string) {
         super(handler, name, usage, options);
@@ -147,6 +148,6 @@ export namespace Command {
     }
   }
   export function reflect<T extends any[]>(usage: string | CommandUsage = [], options?: CommandOptions) {
-    return Command.make<T, [Message, T]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
+    return Command.make<T, [Message, T, ...undefined[]]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
   }
 }
