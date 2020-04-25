@@ -127,9 +127,9 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
 
 export namespace Command {
   export interface Events<P, R> extends GungnirModule.Events {
-    run: (message: Message, args: P, result: R) => any;
-    error: (message: Message, args: P, error: Error) => any;
-    inhibited:(message: Message, inhibitor: Inhibitor) => any;
+    run(message: Message, args: P, result: R): any;
+    error(message: Message, args: P, error: Error): any;
+    inhibited(message: Message, inhibitor: Inhibitor): any;
   }
 
   export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): CommandConstructor<P, R> {

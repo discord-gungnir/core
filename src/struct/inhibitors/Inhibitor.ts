@@ -26,7 +26,7 @@ export abstract class Inhibitor extends GungnirModule<Inhibitor.Events> {
 
 export namespace Inhibitor {
   export interface Events extends GungnirModule.Events {
-    inhibit: (message: Message, command: Command) => any;
+    inhibit(message: Message, command: Command): any;
   }
 
   export function make(inhibit: (this: Inhibitor, message: Message, command: Command) => boolean | Promise<boolean>): InhibitorConstructor {

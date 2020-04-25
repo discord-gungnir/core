@@ -27,7 +27,7 @@ export abstract class Resolver<R = any> extends GungnirModule<Resolver.Events<R>
 
 export namespace Resolver {
   export interface Events<R> extends GungnirModule.Events {
-    resolve(str: string, message: Message, resolved: R): void;
+    resolve(str: string, message: Message, resolved: R): any;
   }
 
   export function make<R>(resolve: (this: Resolver<R>, str: string, message: Message) => R | null | Promise<R | null>): ResolverConstructor<R> {
