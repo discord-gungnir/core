@@ -24,9 +24,9 @@
   },
   "homepage": "https://github.com/discord-gungnir/core#readme",
   "dependencies": {
-    "@types/node": "^13.9.5",
-    "@types/ws": "^7.2.3",
-    "discord.js": "^12.1.1",
+    "@types/node": "^13.13.2",
+    "@types/ws": "^7.2.4",
+    "discord.js": "^12.2.0",
     "reflect-metadata": "^0.1.13",
     "url-regex": "^5.0.0"
   }
