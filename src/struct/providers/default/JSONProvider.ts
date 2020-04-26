@@ -1,10 +1,11 @@
-import { Provider, CachedProviderConstructor } from "../Provider";
+import { Provider } from "../Provider";
 import { promises as fsp } from "fs";
 import path from "path";
+import { CachedProviderConstructor } from "../CachedProvider";
 
 export class JSONProvider extends Provider {
-  declare public static readonly cached: CachedProviderConstructor<typeof JSONProvider>;
-  public constructor(public readonly path: string) {super()}
+  public static readonly cached = CachedProviderConstructor(JSONProvider);
+  public constructor(public readonly path: string) {super();}
 
   private folder(table: string) {
     return path.join(this.path, table)
@@ -35,7 +36,7 @@ export class JSONProvider extends Provider {
     });
   }
 
-  private async read(table: string, id: string): Promise<{[key: string]: Provider.ValueTypes}> {
+  private async read(table: string, id: string): Promise<{[key: string]: Provider.ValueTypes | undefined}> {
     try {return JSON.parse(((await fsp.readFile(this.file(table, id))).toString("utf8")));}
     catch {return {};}
   }
