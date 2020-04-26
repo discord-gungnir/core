@@ -9,6 +9,10 @@ export interface ResolverConstructor<R = any> {
 }
 
 export interface ResolverDecorator<R = any> {
+  <T extends typeof Resolver>(resolver: T): T & Resolver<R>;
+}
+
+export interface ResolverConstructorDecorator<R = any> {
   <T extends ResolverConstructor<R>>(resolver: T): T;
 }
 

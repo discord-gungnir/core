@@ -1,10 +1,10 @@
-import type { Inhibitor, InhibitorDecorator, InhibitorConstructor } from "./Inhibitor";
+import type { Inhibitor, InhibitorDecorator } from "./Inhibitor";
 import type { Command } from "../commands/Command";
 import type { Message } from "discord.js";
 
 export function initInhibitor(onInit: (inhibitor: Inhibitor) => any): InhibitorDecorator {
   // @ts-ignore
-  return <T extends InhibitorConstructor>(inhibitor: T) => class extends inhibitor {
+  return <T extends typeof Inhibitor>(inhibitor: T) => class extends inhibitor {
     public constructor(...args: any[]) {
       // @ts-ignore
       super(...args);

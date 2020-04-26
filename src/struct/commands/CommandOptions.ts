@@ -1,4 +1,4 @@
-import type { Command, CommandDecorator, CommandConstructor } from "./Command";
+import type { Command, CommandDecorator } from "./Command";
 import type { CommandUsage } from "./CommandUsage";
 import type { PermissionResolvable } from "discord.js";
 import type { CommandHandler } from "./CommandHandler";
@@ -18,7 +18,7 @@ function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue: Co
 function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: CommandOptions[T]) {
   return (value?: NonNullable<CommandOptions[T]>) => {
     // @ts-ignore
-    return <T extends CommandConstructor>(command: T) => class extends command {
+    return <T extends typeof Command>(command: T) => class extends command {
       public constructor(handler: CommandHandler, name: string, syntax: CommandUsage, options: CommandOptions = {}) {
         // @ts-ignore
         super(handler, name, syntax, {...options, [key]: value ?? defaultValue});
@@ -74,7 +74,8 @@ export const clientPermissions = decorateOption("clientPermissions");
  * @param value List of required permissions
  */
 export function permissions(value: PermissionResolvable): CommandDecorator {
-  return <T extends CommandConstructor>(command: T) => {
+  // @ts-ignore
+  return <T extends typeof Command>(command: T) => {
     command = userPermissions(value)(command);
     command = clientPermissions(value)(command);
     return command;

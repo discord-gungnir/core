@@ -1,4 +1,4 @@
-import { ResolverConstructor, ResolverDecorator } from "./Resolver";
+import { ResolverConstructor, ResolverConstructorDecorator } from "./Resolver";
 
 interface ResolverToDeclare {
   name: string;
@@ -6,7 +6,7 @@ interface ResolverToDeclare {
 }
 
 export const declaredResolvers: ResolverToDeclare[] = [];
-export function defineResolver(name: string): ResolverDecorator {
+export function defineResolver(name: string): ResolverConstructorDecorator {
   return <T extends ResolverConstructor>(resolver: T) => {
     declaredResolvers.push({name, resolver});
     return resolver;

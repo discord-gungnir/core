@@ -1,4 +1,4 @@
-import { GungnirModule, ModuleConstructor } from "../GungnirModule";
+import { GungnirModule } from "../GungnirModule";
 import type { Message } from "discord.js";
 import type { Command } from "../commands/Command";
 import { GungnirHandler } from "../GungnirHandler";
@@ -10,6 +10,10 @@ export interface InhibitorConstructor {
 }
 
 export interface InhibitorDecorator {
+  <T extends typeof Inhibitor>(inhibitor: T): T;
+}
+
+export interface InhibitorConstructorDecorator {
   <T extends InhibitorConstructor>(inhibitor: T): T;
 }
 
