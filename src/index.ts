@@ -27,6 +27,7 @@ export * from "./struct/inhibitors/default/NSFWInhibitor";
 export * from "./struct/inhibitors/default/OwnerOnlyInhibitor";
 export * from "./struct/inhibitors/default/PermissionsInhibitor";
 
+export * from "./struct/providers/CachedProvider";
 export * from "./struct/providers/Provided";
 export * from "./struct/providers/Provider";
 export * from "./struct/providers/SQLProvider";
