@@ -13,8 +13,8 @@ export interface CommandConstructor<P extends any[] = any[], R = any> {
   new (handler: CommandHandler, name: string): Command<P, R>;
 }
 
-export interface CommandDecorator<P extends any[] = any[], R = any> {
-  <T extends typeof Command>(command: T): T & Command<P, R>;
+export interface CommandDecorator {
+  <T extends typeof Command>(command: T): T;
 }
 
 export interface CommandConstructorDecorator<P extends any[] = any[], R = any> {
