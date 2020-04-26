@@ -8,8 +8,8 @@ export interface ResolverConstructor<R = any> {
   new (handler: ResolverHandler, name: string): Resolver<R>;
 }
 
-export interface ResolverDecorator {
-  <T extends typeof Resolver>(resolver: T): T;
+export interface ResolverDecorator<R = any> {
+  <T extends Function & {prototype: Resolver<R>}>(resolver: T): T;
 }
 
 export interface ResolverConstructorDecorator<R = any> {

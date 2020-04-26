@@ -15,7 +15,8 @@ export interface CommandOptions {
 
 function decorateOption<T extends keyof CommandOptions>(key: T): (value: NonNullable<CommandOptions[T]>) => CommandDecorator;
 function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue: CommandOptions[T]): (value?: NonNullable<CommandOptions[T]>) => CommandDecorator;
-function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: CommandOptions[T]) {
+function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: CommandOptions[T]): (value?: NonNullable<CommandOptions[T]>) => CommandDecorator {
+  // @ts-ignore
   return (value?: NonNullable<CommandOptions[T]>) => {
     // @ts-ignore
     return <T extends typeof Command>(command: T) => class extends command {
@@ -24,7 +25,7 @@ function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: C
         super(handler, name, syntax, {...options, [key]: value ?? defaultValue});
       }
     }
-  }
+  };
 }
 
 /**

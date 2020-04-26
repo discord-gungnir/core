@@ -1,8 +1,7 @@
 import { GungnirError } from "../../util/GungnirError";
 import type { CommandHandler } from "./CommandHandler";
 import type { CommandOptions } from "./CommandOptions";
-import type { Command, CommandDecorator, CommandConstructor } from "./Command";
-import type { Message } from "discord.js";
+import type { CommandDecorator, CommandConstructor } from "./Command";
 import type { Resolver } from "../resolvers/Resolver";
 
 // types
