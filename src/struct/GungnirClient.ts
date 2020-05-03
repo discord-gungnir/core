@@ -97,7 +97,7 @@ export class GungnirClient extends Client {
         if (!optional && arg.length == 0)
           return this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
         if (Array.isArray(arg)) {
-          resolved = await Promise.all(arg.map(ar => new Promise(async (resolve, reject) => {
+          resolved = arg.length > 0 ? await Promise.all(arg.map(ar => new Promise(async (resolve, reject) => {
             for (const resolver of resolvers) {
               if (resolver.disabled) continue;
               try {
@@ -106,14 +106,14 @@ export class GungnirClient extends Client {
               } catch {}
             }
             return reject();
-          }))).catch(() => null);
+          }))).catch(() => null) : null;
         } else {
           for (const resolver of resolvers) {
             if (resolver.disabled) continue;
             try {
               resolved = await resolver.resolve(arg, msg) ?? null;
+              if (resolved) break;
             } catch {}
-            if (resolved) break;
           }
         }
         if (resolved) {
