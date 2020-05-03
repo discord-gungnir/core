@@ -90,39 +90,45 @@ export class GungnirClient extends Client {
       const content = msg.convertMentions(prefix).replace(prefix, "");
       let args = content.split(/\s+/g).slice(command.depth+1);
       const resolveds: any[] = [];
-      for (const {resolvers, optional, type} of command.usage) {
-        let resolved;
-        const spreads = type == "rest" || type == "list";
-        const arg = type == "list" ? args : type == "rest" ? args.join(" ") : (args[0] ?? "");
-        if (!optional && arg.length == 0)
+      for (const {resolvers, type, optional} of command.usage) {
+        if (!optional && args.length == 0)
           return this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
-        if (Array.isArray(arg)) {
-          resolved = arg.length > 0 ? await Promise.all(arg.map(ar => new Promise(async (resolve, reject) => {
+        if (type == "list") {
+          let listResolveds = [];
+          for (const arg of args) {
+            let resolved;
             for (const resolver of resolvers) {
               if (resolver.disabled) continue;
-              try {
-                const res = await resolver.resolve(ar, msg) ?? null;
-                if (res) return resolve(res);
-              } catch {}
-            }
-            return reject();
-          }))).catch(() => null) : null;
-        } else {
-          for (const resolver of resolvers) {
-            if (resolver.disabled) continue;
-            try {
               resolved = await resolver.resolve(arg, msg) ?? null;
               if (resolved) break;
-            } catch {}
+            }
+            if (resolved)
+              listResolveds.push(resolved);
+            else break;
           }
+          if (listResolveds.length > 0) {
+            resolveds.push(listResolveds);
+            args = args.slice(listResolveds.length);
+          } else if (optional)
+            resolveds.push(undefined);
+          else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
+        } else {
+          let resolved;
+          const rest = type == "rest";
+          const arg = rest ? args.join(" ") : (args[0] ?? "");
+          for (const resolver of resolvers) {
+            if (resolver.disabled) continue;
+            resolved = await resolver.resolve(arg, msg) ?? null;
+            if (resolved) break;
+          }
+          if (resolved) {
+            resolveds.push(resolved);
+            if (rest) args = [];
+            else args.shift();
+          } else if (optional)
+            resolveds.push(undefined);
+          else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
         }
-        if (resolved) {
-          resolveds.push(resolved);
-          if (spreads) args = [];
-          else args.shift();
-        } else if (optional)
-          resolveds.push(undefined);
-        else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
       }
       if (args.length > 0)
         return this.emit("syntaxError", msg, command, "TOO_MANY_ARGUMENTS");

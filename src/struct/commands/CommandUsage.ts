@@ -36,7 +36,7 @@ export namespace CommandUsageBuilder {
   let building: CommandUsage = [];
 
   const NO_ARGUMENTS = "no CommandArguments declared.";
-  const SPREAD_LAST_ARG = "there cannot be any CommandArgument after a rest or list CommandArgument.";
+  const SPREAD_LAST_ARG = "there cannot be any CommandArgument after a rest CommandArgument.";
 
   function lastArg() {
     if (building.length == 0)
@@ -45,7 +45,7 @@ export namespace CommandUsageBuilder {
   }
 
   export function argument(...resolvers: Resolver<any>[]) {
-    if (building.length > 0 && lastArg().type != "normal") {
+    if (building.length > 0 && lastArg().type == "rest") {
       building = [];
       throw new GungnirError(SPREAD_LAST_ARG);
     } else {
