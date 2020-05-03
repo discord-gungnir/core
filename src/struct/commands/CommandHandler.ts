@@ -33,8 +33,7 @@ export class CommandHandler extends GungnirHandler<Command, CommandConstructor> 
   public promise<C extends CommandConstructor>(names: any, command: C): Promise<CommandReturnType<InstanceType<C>>> {
     return new Promise((resolve, reject) => {
       const created = this.create(names, command);
-      (created as InferCommandTypes<typeof created>)
-      .once("run", (msg, args, res) => {
+      created.once("run", (msg, args, res) => {
         created.delete();
         resolve(res);
       }).once("error", (msg, args, err) => {

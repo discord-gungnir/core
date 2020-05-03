@@ -20,9 +20,8 @@ function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: C
   return (value?: NonNullable<CommandOptions[T]>) => {
     // @ts-ignore
     return <T extends typeof Command>(command: T) => class extends command {
-      public constructor(handler: CommandHandler, name: string, syntax: CommandUsage, options: CommandOptions = {}) {
-        // @ts-ignore
-        super(handler, name, syntax, {...options, [key]: value ?? defaultValue});
+      public constructor(handler: CommandHandler, name: string, syntax?: string | CommandUsage, options: CommandOptions = {}) {
+        super(handler, name, syntax, {[key]: value ?? defaultValue, ...options});
       }
     }
   };
@@ -33,6 +32,18 @@ function decorateOption<T extends keyof CommandOptions>(key: T, defaultValue?: C
  * @param value 'guild' or 'dm' or 'both'
  */
 export const restrictedTo = decorateOption("restrictedTo");
+
+/**
+ * Restrict this command to guilds
+ * @param value Is this command restricted to guilds
+ */
+export const guildOnly = (value: boolean = true) => restrictedTo(value ? "guild" : "both");
+
+/**
+ * Restrict this command to DMs
+ * @param value Is this command restricted to DMs
+ */
+export const dmOnly = (value: boolean = true) => restrictedTo(value ? "dm" : "both");
 
 /**
  * Set the command to owner only
@@ -82,15 +93,3 @@ export function permissions(value: PermissionResolvable): CommandDecorator {
     return command;
   }
 }
-
-/**
- * Restrict this command to guilds
- * @param value Is this command restricted to guilds
- */
-export const guildOnly = (value: boolean = true) => restrictedTo(value ? "guild" : "both");
-
-/**
- * Restrict this command to DMs
- * @param value Is this command restricted to DMs
- */
-export const dmOnly = (value: boolean = true) => restrictedTo(value ? "dm" : "both");

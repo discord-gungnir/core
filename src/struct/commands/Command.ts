@@ -65,11 +65,12 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
   }
   protected init() {}
 
+  // names
+
   public get names() {
     return [this.name, ...this.aliases];
   }
   public get aliases() {
-    if (this.deleted) return [];
     const aliases: string[] = [];
     const index = aliasesIndex(this.handler);
     for (const [alias, command] of index.entries())
@@ -84,7 +85,6 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
     return this;
   }
   public unbindAliases(...aliases: string[]): this {
-    if (this.deleted) return this;
     const index = aliasesIndex(this.handler);
     for (const alias of aliases) {
       if (this.isAliasBound(alias))
@@ -93,7 +93,6 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
     return this;
   }
   public isAliasBound(alias: string): boolean {
-    if (this.deleted) return false;
     const index = aliasesIndex(this.handler);
     return index.get(alias.toLowerCase()) == this;
   }
@@ -101,36 +100,22 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
     return this.unbindAliases(...this.aliases);
   }
 
+  // misc
+
   public get description(): string {
     return Reflect.getMetadata("description", this) ?? "";
   }
   public get group(): string | null {
     return Reflect.getMetadata("group", this) ?? this.parent?.group ?? null;
   }
-
-  public static resolve(names: [string, ...string[]], message: Message): Command | null {
-    names = [...names] as [string, ...string[]];
-    const name = names.shift() as string;
-    let command =
-      message.author.commands.get(name) ??
-      message.member?.commands.get(name) ??
-      message.channel.commands.get(name) ??
-      message.member?.voice.channel?.commands.get(name) ??
-      message.guild?.commands.get(name) ??
-      message.client.commands.get(name);
-    if (!command) return null;
-    while (true) {
-      const nextName = names.shift();
-      if (!nextName) return command;
-      if (command.subcommands.has(nextName))
-        command = command.subcommands.get(nextName) as Command;
-      else return command;
-    }
+  public get usageString(): string {
+    return this.client.resolvers.usageToString(this.usage);
   }
 }
 
 export namespace Command {
   export interface Events<P, R> extends GungnirModule.Events {
+    prepare(message: Message, args: P): any;
     run(message: Message, args: P, result: R): any;
     error(message: Message, args: P, error: Error): any;
     inhibited(message: Message, inhibitor: Inhibitor): any;
@@ -148,6 +133,26 @@ export namespace Command {
     }
   }
   export function reflect<T extends any[]>(usage: string | CommandUsage = [], options?: CommandOptions) {
-    return Command.make<T, [Message, T, ...undefined[]]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
+    return Command.make<T, [Message, T]>(usage, (msg: Message, ...args: T) => ([msg, args]), options);
+  }
+
+  export function resolve(names: [string, ...string[]], message: Message): Command | null {
+    names = [...names] as [string, ...string[]];
+    const name = names.shift() as string;
+    let command =
+      message.author.commands.get(name) ??
+      message.member?.commands.get(name) ??
+      message.channel.commands.get(name) ??
+      message.member?.voice.channel?.commands.get(name) ??
+      message.guild?.commands.get(name) ??
+      message.client.commands.get(name);
+    if (!command) return null;
+    while (true) {
+      const nextName = names.shift();
+      if (!nextName) return command;
+      if (command.subcommands.has(nextName))
+        command = command.subcommands.get(nextName) as Command;
+      else return command;
+    }
   }
 }

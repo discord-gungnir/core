@@ -6,7 +6,7 @@ import type { Inhibitor } from "../inhibitors/Inhibitor";
  * Define a callback that is called when the command is created
  * @param onInit Called after the command is created
  */
-export function initCommand<P extends any[], R = any>(onInit: (command: Command<P, R>) => any): CommandDecorator {
+export function initCommand<P extends any[], R = any>(onInit: (command: Command<P, R>) => any): CommandDecorator<P, R> {
   // @ts-ignore
   return <T extends typeof Command>(command: T) => class extends command {
     public constructor(...args: any[]) {

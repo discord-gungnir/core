@@ -1,4 +1,4 @@
-import { Resolver, ResolvesTo } from "../Resolver";
+import { Resolver } from "../Resolver";
 import type { GuildChannel, Message } from "discord.js";
 import { defineResolver } from "../DefineResolver";
 

@@ -5,13 +5,14 @@ import type { CommandDecorator, CommandConstructor } from "./Command";
 import type { Resolver } from "../resolvers/Resolver";
 
 // types
-interface CommandArgument {
+
+export interface CommandArgument {
   resolvers: Resolver<any>[];
-  optional?: boolean;
-  rest?: boolean;
+  type: "normal" | "rest" | "list";
+  optional: boolean;
 }
 
-export type CommandUsage = readonly Readonly<CommandArgument>[];
+export type CommandUsage = CommandArgument[];
 
 // decorators
 
@@ -22,9 +23,9 @@ export type CommandUsage = readonly Readonly<CommandArgument>[];
 export function usage(usage: string | CommandUsage): CommandDecorator {
   // @ts-ignore
   return <T extends CommandConstructor>(command: T) => class extends command {
-    public constructor(handler: CommandHandler, name: string, oldUsage: CommandUsage, options?: CommandOptions) {
+    public constructor(handler: CommandHandler, name: string, oldUsage?: string | CommandUsage, options?: CommandOptions) {
       // @ts-ignore
-      super(handler, name, usage, options);
+      super(handler, name, oldUsage ? oldUsage : usage, options);
     }
   }
 }
@@ -32,10 +33,10 @@ export function usage(usage: string | CommandUsage): CommandDecorator {
 // CommandUsageBuilder
 
 export namespace CommandUsageBuilder {
-  let building: CommandArgument[] = [];
+  let building: CommandUsage = [];
 
   const NO_ARGUMENTS = "no CommandArguments declared.";
-  const SPREAD_LAST_ARG = "there cannot be any CommandArgument after a rest CommandArgument.";
+  const SPREAD_LAST_ARG = "there cannot be any CommandArgument after a rest or list CommandArgument.";
 
   function lastArg() {
     if (building.length == 0)
@@ -44,16 +45,26 @@ export namespace CommandUsageBuilder {
   }
 
   export function argument(...resolvers: Resolver<any>[]) {
-    if (building.length > 0 && lastArg().rest) {
+    if (building.length > 0 && lastArg().type != "normal") {
       building = [];
       throw new GungnirError(SPREAD_LAST_ARG);
     } else {
-      building.push({resolvers, rest: false, optional: false});
+      building.push({resolvers, type: "normal", optional: false});
       return CommandUsageBuilder;
     }
   }
+  export function type(type: CommandArgument["type"]) {
+    lastArg().type = type;
+    return CommandUsageBuilder;
+  }
   export function rest(rest = true) {
-    lastArg().rest = rest;
+    const arg = lastArg();
+    arg.type = rest ? "rest" : arg.type == "rest" ? "normal" : arg.type;
+    return CommandUsageBuilder;
+  }
+  export function list(list = true) {
+    const arg = lastArg();
+    arg.type = list ? "list" : arg.type == "list" ? "normal" : arg.type;
     return CommandUsageBuilder;
   }
   export function optional(optional = true) {

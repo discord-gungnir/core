@@ -1,7 +1,7 @@
 import type { Resolver, ResolverDecorator } from "./Resolver";
 import type { Message } from "discord.js";
 
-export function initResolver<R = any>(onInit: (resolver: Resolver<R>) => any): ResolverDecorator {
+export function initResolver<R = any>(onInit: (resolver: Resolver<R>) => any): ResolverDecorator<R> {
   // @ts-ignore
   return <T extends typeof Resolver>(resolver: T) => class extends resolver {
     public constructor(...args: any[]) {

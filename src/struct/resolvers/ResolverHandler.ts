@@ -13,6 +13,8 @@ export class ResolverHandler extends GungnirHandler<Resolver, ResolverConstructo
       if (rest) arg = arg.slice(3);
       let optional = arg.endsWith("?");
       if (optional) arg = arg.slice(0, -1);
+      let list = arg.endsWith("[]");
+      if (list) arg = arg.slice(0, -2);
       if (arg == "") arg = "string";
       const types = arg.split("|");
       CommandUsageBuilder.argument(...types.map(type => {
@@ -20,16 +22,16 @@ export class ResolverHandler extends GungnirHandler<Resolver, ResolverConstructo
         const resolver = this.get(type);
         if (resolver) return resolver;
         throw new GungnirError(UNKNOWN_RESOLVER(type));
-      })).rest(rest).optional(optional);
+      })).rest(rest).list(list).optional(optional);
     }
     return CommandUsageBuilder.build();
   }
   public usageToString(usage: CommandUsage): string {
     const stringify: string[] = [];
-    for (const {resolvers, optional, rest} of usage) {
-      let str = "";
-      if (rest) str += "...";
+    for (const {resolvers, optional, type} of usage) {
+      let str = type == "rest" ? "..." : "";
       str += resolvers.map(resolver => resolver.name).join("|");
+      if (type == "list") str += "[]";
       if (optional) str += "?";
       stringify.push(str);
     }

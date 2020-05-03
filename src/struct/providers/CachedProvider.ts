@@ -13,7 +13,7 @@ export interface CachedProviderConstructor<P extends ProviderConstructor> {
 type Entity = {[key: string]: Provider.ValueTypes | null | undefined};
 type Table = {[id: string]: Entity};
 type Cache = {[table: string]: Table};
-export function CachedProviderConstructor<P extends ProviderConstructor>(provider: P): CachedProviderConstructor<P> {
+export function CachedProvider<P extends ProviderConstructor>(provider: P): CachedProviderConstructor<P> {
   return class extends (provider as any) implements CachedProvider {
     public async get(table: string, id: string, key: string): Promise<Provider.ValueTypes | null> {
       const cached = this.getFromCache(table, id, key);

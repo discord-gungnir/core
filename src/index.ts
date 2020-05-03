@@ -35,6 +35,7 @@ export * from "./struct/providers/default/JSONProvider";
 
 export { defineResolver } from "./struct/resolvers/DefineResolver";
 export * from "./struct/resolvers/Resolver";
+export * from "./struct/resolvers/ResolverDecorators";
 export * from "./struct/resolvers/default/ChannelResolver";
 export * from "./struct/resolvers/default/CommandResolver";
 export * from "./struct/resolvers/default/GuildMemberResolver";

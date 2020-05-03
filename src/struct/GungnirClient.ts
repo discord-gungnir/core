@@ -3,11 +3,11 @@ import { Prefix, PrefixResolvable } from "./Types";
 import type { Provider } from "./providers/Provider";
 import { ClientEvents } from "discord.js";
 
-import { Command, InferCommandTypes } from "./commands/Command";
+import { Command } from "./commands/Command";
 import { CommandHandler } from "./commands/CommandHandler";
 import { declaredCommands } from "./commands/DefineCommand";
 
-import { Inhibitor, InhibitorConstructor, InhibitorHandler } from "./inhibitors/Inhibitor";
+import { Inhibitor, InhibitorHandler } from "./inhibitors/Inhibitor";
 import { declaredInhibitors } from "./inhibitors/DefineInhibitor";
 import "./inhibitors/default/AdminOnlyInhibitor";
 import "./inhibitors/default/DenyBotsInhibitor";
@@ -40,10 +40,6 @@ export interface GungnirClientOptions extends ClientOptions {
   ready?: string;
   prefix?: PrefixResolvable;
   provider?: Provider;
-}
-
-declare class TestCommand extends Command {
-  public run(msg: Message, str: string, nb: number): boolean;
 }
 
 export class GungnirClient extends Client {
@@ -79,7 +75,7 @@ export class GungnirClient extends Client {
     }).on("message", async msg => {
       const prefix = await this.resolvePrefix(msg);
       const command = await this.resolveCommand(msg, prefix);
-      if (!command) return this.emit("notCommand", msg, null);
+      if (!command) return this.emit("notCommand", msg);
       this.emit("command", msg, command);
       if (command.disabled) return this.emit("commandDisabled", msg, command);
       for (const inhibitor of this.inhibitors) {
@@ -92,36 +88,53 @@ export class GungnirClient extends Client {
         }
       }
       const content = msg.convertMentions(prefix).replace(prefix, "");
-      let split = content.split(/\s+/g).slice(command.depth+1);
-      const args = [];
-      for (const {resolvers, rest, optional} of command.usage) {
+      let args = content.split(/\s+/g).slice(command.depth+1);
+      const resolveds: any[] = [];
+      for (const {resolvers, optional, type} of command.usage) {
         let resolved;
-        const arg = rest ? split.join(" ") : (split[0] ?? "");
+        const spreads = type == "rest" || type == "list";
+        const arg = type == "list" ? args : type == "rest" ? args.join(" ") : (args[0] ?? "");
         if (!optional && arg.length == 0)
           return this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
-        for (const resolver of resolvers) {
-          if (resolver.disabled) continue;
-          resolved = await resolver.resolve(arg, msg) ?? null;
-          if (resolved) break;
+        if (Array.isArray(arg)) {
+          resolved = await Promise.all(arg.map(ar => new Promise(async (resolve, reject) => {
+            for (const resolver of resolvers) {
+              if (resolver.disabled) continue;
+              try {
+                const res = await resolver.resolve(ar, msg) ?? null;
+                if (res) return resolve(res);
+              } catch {}
+            }
+            return reject();
+          }))).catch(() => null);
+        } else {
+          for (const resolver of resolvers) {
+            if (resolver.disabled) continue;
+            try {
+              resolved = await resolver.resolve(arg, msg) ?? null;
+            } catch {}
+            if (resolved) break;
+          }
         }
         if (resolved) {
-          args.push(resolved);
-          if (rest) split = [];
-          else split.shift();
-        } else if (optional) {
-          args.push(undefined);
-        } else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
+          resolveds.push(resolved);
+          if (spreads) args = [];
+          else args.shift();
+        } else if (optional)
+          resolveds.push(undefined);
+        else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
       }
-      if (split.length > 0)
+      if (args.length > 0)
         return this.emit("syntaxError", msg, command, "TOO_MANY_ARGUMENTS");
-      this.emit("beforeCommand", msg, command, null);
+      this.emit("prepareCommand", msg, command);
+      command.emit("prepare", msg, resolveds);
       try {
-        const res = await command.run(msg, ...args);
+        const res = await command.run(msg, ...resolveds);
         this.emit("commandRan", msg, command, res);
-        command.emit("ran", msg, args, res);
+        command.emit("ran", msg, resolveds, res);
       } catch(err) {
         this.emit("commandError", msg, command, err);
-        command.emit("error", msg, args, err);
+        command.emit("error", msg, resolveds, err);
       }
     });
   }
@@ -158,8 +171,7 @@ export class GungnirClient extends Client {
 
   // commands
   public resolvePrefix(message: Message): Prefix {
-    const prefix = message.prefix ?? message.guild?.prefix ?? this.prefix;
-    return Prefix.resolve(prefix, message);
+    return Prefix.resolve(message.prefix ?? message.channel.prefix ?? message.guild?.prefix ?? this.prefix, message);
   }
   public resolveCommand(message: Message, prefix = this.resolvePrefix(message)): Command|null | Promise<Command|null> {
     if (prefix instanceof Promise)
@@ -180,10 +192,10 @@ export interface GungnirClient extends Client {
 
 export interface GungnirClientEvents extends ClientEvents {
   command: [Message, Command];
-  notCommand: [Message, null];
+  notCommand: [Message];
   commandDisabled: [Message, Command];
   commandInhibited: [Message, Command, Inhibitor];
-  beforeCommand: [Message, Command, null];
+  prepareCommand: [Message, Command];
   commandRan: [Message, Command, any];
   commandError: [Message, Command, Error];
   syntaxError: [Message, Command, "NOT_ENOUGH_ARGUMENTS" | "MISSING_ARGUMENT" | "TOO_MANY_ARGUMENTS"];
