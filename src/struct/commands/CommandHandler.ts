@@ -1,5 +1,5 @@
 import { GungnirHandler } from "../GungnirHandler";
-import { Command, CommandConstructor, CommandReturnType, InferCommandTypes } from "./Command";
+import { Command, CommandConstructor, CommandReturnType } from "./Command";
 import { aliasesIndex } from "./CommandAliases";
 
 export class CommandHandler extends GungnirHandler<Command, CommandConstructor> {

@@ -4,16 +4,16 @@ import type { ResolverHandler } from "./ResolverHandler";
 
 // types
 
-export interface ResolverConstructor<R = any> {
-  new (handler: ResolverHandler, name: string): Resolver<R>;
+export interface ResolverConstructor<T extends Resolver = Resolver> {
+  new (handler: ResolverHandler, name: string): T;
 }
 
-export interface ResolverDecorator<R = any> {
-  <T extends Function & {prototype: Resolver<R>}>(resolver: T): T;
+export interface ResolverDecorator<T extends Resolver = Resolver> {
+  <K extends Function & {prototype: T}>(resolver: K): K;
 }
 
-export interface ResolverConstructorDecorator<R = any> {
-  <T extends ResolverConstructor<R>>(resolver: T): T;
+export interface ResolverConstructorDecorator<T extends Resolver = Resolver> {
+  <K extends ResolverConstructor<T>>(resolver: K): K;
 }
 
 export type ResolvesTo<T extends Resolver> = T extends Resolver<infer R> ? R : never;
@@ -34,7 +34,7 @@ export namespace Resolver {
     resolve(str: string, message: Message, resolved: R): any;
   }
 
-  export function make<R>(resolve: (this: Resolver<R>, str: string, message: Message) => R | null | Promise<R | null>): ResolverConstructor<R> {
+  export function make<R>(resolve: (this: Resolver<R>, str: string, message: Message) => R | null | Promise<R | null>): ResolverConstructor<Resolver<R>> {
     return class extends Resolver<R> {
       public resolve(str: string, msg: Message): any {
         return resolve.call(this, str, msg);

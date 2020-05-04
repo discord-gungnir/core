@@ -92,7 +92,7 @@ export class GungnirClient extends Client {
       const resolveds: any[] = [];
       for (const {resolvers, type, optional} of command.usage) {
         if (!optional && args.length == 0)
-          return this.emit("syntaxError", msg, command, "NOT_ENOUGH_ARGUMENTS");
+          return this.emit("invalidUsage", msg, command, "NOT_ENOUGH_ARGUMENTS");
         if (type == "list") {
           let listResolveds = [];
           for (const arg of args) {
@@ -111,7 +111,7 @@ export class GungnirClient extends Client {
             args = args.slice(listResolveds.length);
           } else if (optional)
             resolveds.push(undefined);
-          else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
+          else return this.emit("invalidUsage", msg, command, "MISSING_ARGUMENT");
         } else {
           let resolved;
           const rest = type == "rest";
@@ -127,11 +127,11 @@ export class GungnirClient extends Client {
             else args.shift();
           } else if (optional)
             resolveds.push(undefined);
-          else return this.emit("syntaxError", msg, command, "MISSING_ARGUMENT");
+          else return this.emit("invalidUsage", msg, command, "MISSING_ARGUMENT");
         }
       }
       if (args.length > 0)
-        return this.emit("syntaxError", msg, command, "TOO_MANY_ARGUMENTS");
+        return this.emit("invalidUsage", msg, command, "TOO_MANY_ARGUMENTS");
       this.emit("prepareCommand", msg, command);
       command.emit("prepare", msg, resolveds);
       try {
@@ -204,7 +204,7 @@ export interface GungnirClientEvents extends ClientEvents {
   prepareCommand: [Message, Command];
   commandRan: [Message, Command, any];
   commandError: [Message, Command, Error];
-  syntaxError: [Message, Command, "NOT_ENOUGH_ARGUMENTS" | "MISSING_ARGUMENT" | "TOO_MANY_ARGUMENTS"];
+  invalidUsage: [Message, Command, "NOT_ENOUGH_ARGUMENTS" | "MISSING_ARGUMENT" | "TOO_MANY_ARGUMENTS"];
 }
 
 declare module "discord.js" {

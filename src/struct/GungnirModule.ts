@@ -7,6 +7,14 @@ export interface ModuleConstructor<M extends GungnirModule = any, H extends Gung
   new (handler: H, name: string): M;
 }
 
+export interface ModuleDecorator<T extends GungnirModule = GungnirModule> {
+  <K extends Function & {prototype: T}>(module: K): K;
+}
+
+export interface ModuleConstructorDecorator<T extends GungnirModule = GungnirModule> {
+  <K extends ModuleConstructor<T>>(module: K): K;
+}
+
 const INVALID_MODULE_NAME = (name: string) => `${name.toLowerCase()} isn't a valid module name.`;
 
 export abstract class GungnirModule<E extends GungnirModule.Events = any> extends EventEmitter {

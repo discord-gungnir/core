@@ -9,16 +9,16 @@ import { getChildren } from "./DefineCommand";
 
 // types
 
-export interface CommandConstructor<P extends any[] = any[], R = any> {
-  new (handler: CommandHandler, name: string): Command<P, R>;
+export interface CommandConstructor<T extends Command = Command> {
+  new (handler: CommandHandler, name: string): T;
 }
 
-export interface CommandDecorator<P extends any[] = any[], R = any> {
-  <T extends Function & {prototype: Command<P, R>}>(command: T): T;
+export interface CommandDecorator<T extends Command = Command> {
+  <K extends Function & {prototype: T}>(command: K): K;
 }
 
-export interface CommandConstructorDecorator<P extends any[] = any[], R = any> {
-  <T extends CommandConstructor<P, R>>(command: T): T;
+export interface CommandConstructorDecorator<T extends Command = Command> {
+  <K extends CommandConstructor<T>>(command: K): K;
 }
 
 export type CommandParameters<T extends Command> = T extends Command<infer P, any> ? P : never;
@@ -116,12 +116,12 @@ export abstract class Command<P extends any[] = any[], R = any> extends GungnirM
 export namespace Command {
   export interface Events<P, R> extends GungnirModule.Events {
     prepare(message: Message, args: P): any;
-    run(message: Message, args: P, result: R): any;
+    ran(message: Message, args: P, result: R): any;
     error(message: Message, args: P, error: Error): any;
     inhibited(message: Message, inhibitor: Inhibitor): any;
   }
 
-  export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): CommandConstructor<P, R> {
+  export function make<P extends any[], R>(usage: string | CommandUsage = [], run: (this: Command, message: Message, ...args: P) => R, options?: CommandOptions): CommandConstructor<Command<P, R>> {
     return class extends Command {
       public constructor(handler: CommandHandler, name: string) {
         super(handler, name, usage, options);

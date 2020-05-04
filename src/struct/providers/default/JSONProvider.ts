@@ -1,7 +1,7 @@
 import { Provider } from "../Provider";
 import { promises as fsp } from "fs";
-import path from "path";
 import { CachedProvider } from "../CachedProvider";
+import path from "path";
 
 export class JSONProvider extends Provider {
   public static readonly cached = CachedProvider(JSONProvider);

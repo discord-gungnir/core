@@ -1,4 +1,4 @@
-import type { Command, CommandDecorator } from "./Command";
+import type { Command, CommandDecorator, CommandParameters, CommandReturnType } from "./Command";
 import type { Message } from "discord.js";
 import type { Inhibitor } from "../inhibitors/Inhibitor";
 
@@ -6,39 +6,47 @@ import type { Inhibitor } from "../inhibitors/Inhibitor";
  * Define a callback that is called when the command is created
  * @param onInit Called after the command is created
  */
-export function initCommand<P extends any[], R = any>(onInit: (command: Command<P, R>) => any): CommandDecorator<P, R> {
+export function initCommand<T extends Command>(onInit: (command: T) => any): CommandDecorator<T> {
   // @ts-ignore
-  return <T extends typeof Command>(command: T) => class extends command {
+  return <T extends Function & {prototype: T}>(command: T) => class extends command {
     public constructor(...args: any[]) {
-      // @ts-ignore
       super(...args);
+      // @ts-ignore
       onInit(this);
     }
   }
 }
 
-/** 
- * Define a callback that is called after the command ran
- * @param onRun Called after the command ran
+/**
+ * Define a callback that is called before the command runs
+ * @param onPrepare Called before the command runs
 */
-export function commandRun<P extends any[], R = any>(onRun: (this: Command<P, R>, message: Message, args: P, result: R) => void) {
-  return initCommand<P, R>(command => command.on("run", onRun.bind(command)));
+export function prepare<T extends Command>(onPrepare: (this: T, message: Message, args: CommandParameters<T>) => void) {
+  return initCommand<T>(command => command.on("prepare", onPrepare.bind(command)));
+}
+
+/**
+ * Define a callback that is called after the command ran
+ * @param onRan Called after the command ran
+*/
+export function ran<T extends Command>(onRan: (this: T, message: Message, args: CommandParameters<T>, result: CommandReturnType<T>) => void) {
+  return initCommand<T>(command => command.on("ran", onRan.bind(command)));
 }
 
 /**
  * Define a callback that is called when the command errors
  * @param onError Called when the command errors
  */
-export function commandError<P extends any[], R = any>(onError: (this: Command<P, R>, message: Message, args: P, error: Error) => void) {
-  return initCommand<P, R>(command => command.on("error", onError.bind(command)));
+export function error<T extends Command>(onError: (this: T, message: Message, args: CommandParameters<T>, error: Error) => void) {
+  return initCommand<T>(command => command.on("error", onError.bind(command)));
 }
 
 /**
  * Define a callback that is called when the command is inhibited
- * @param onInhibited Called whe the command is inhibited
+ * @param onInhibited Called when the command is inhibited
  */
-export function commandInhibited<P extends any[], R = any>(onInhibited: (this: Command<P, R>, message: Message, inhibitor: Inhibitor) => void) {
-  return initCommand<P, R>(command => command.on("inhibited", onInhibited.bind(command)));
+export function inhibited<T extends Command>(onInhibited: (this: T, message: Message, inhibitor: Inhibitor) => void) {
+  return initCommand<T>(command => command.on("inhibited", onInhibited.bind(command)));
 }
 
 /**

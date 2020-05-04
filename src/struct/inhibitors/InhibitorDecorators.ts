@@ -2,17 +2,17 @@ import type { Inhibitor, InhibitorDecorator } from "./Inhibitor";
 import type { Command } from "../commands/Command";
 import type { Message } from "discord.js";
 
-export function initInhibitor(onInit: (inhibitor: Inhibitor) => any): InhibitorDecorator {
+export function initInhibitor<T extends Inhibitor>(onInit: (inhibitor: T) => any): InhibitorDecorator<T> {
   // @ts-ignore
-  return <T extends typeof Inhibitor>(inhibitor: T) => class extends inhibitor {
+  return <T extends Function & {prototype: T}>(inhibitor: T) => class extends inhibitor {
     public constructor(...args: any[]) {
-      // @ts-ignore
       super(...args);
+      // @ts-ignore
       onInit(this);
     }
   }
 }
 
-export function inhibit(onInhibit: (this: Inhibitor, message: Message, command: Command) => void) {
-  return initInhibitor(inhibitor => inhibitor.on("inhibit", onInhibit.bind(inhibitor)));
+export function inhibit<T extends Inhibitor>(onInhibit: (this: T, message: Message, command: Command) => void) {
+  return initInhibitor<T>(inhibitor => inhibitor.on("inhibit", onInhibit.bind(inhibitor)));
 }

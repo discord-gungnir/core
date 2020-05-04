@@ -5,16 +5,16 @@ import { GungnirHandler } from "../GungnirHandler";
 
 // types
 
-export interface InhibitorConstructor {
-  new (handler: InhibitorHandler, name: string): Inhibitor;
+export interface InhibitorConstructor<T extends Inhibitor = Inhibitor> {
+  new (handler: InhibitorHandler, name: string): T;
 }
 
-export interface InhibitorDecorator {
-  <T extends Function & {prototype: Inhibitor}>(inhibitor: T): T;
+export interface InhibitorDecorator<T extends Inhibitor = Inhibitor> {
+  <K extends Function & {prototype: T}>(inhibitor: K): K;
 }
 
-export interface InhibitorConstructorDecorator {
-  <T extends InhibitorConstructor>(inhibitor: T): T;
+export interface InhibitorConstructorDecorator<T extends Inhibitor = Inhibitor> {
+  <K extends InhibitorConstructor<T>>(inhibitor: K): K;
 }
 
 // Inhibitor
