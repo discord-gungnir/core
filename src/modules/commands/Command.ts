@@ -1,8 +1,9 @@
-import type { Guild, TextChannel, NewsChannel, GuildMember, PermissionResolvable, MessageEmbed, Message, DMChannel, User,
-    CommandInteraction, ApplicationCommandManager, ApplicationCommandData, ApplicationCommandOptionType, Snowflake } from "discord.js";
+import type { Guild, TextChannel, NewsChannel, GuildMember, PermissionResolvable, DMChannel, User, CommandInteraction,
+  ApplicationCommandManager, ApplicationCommandData, ApplicationCommandOptionType, Snowflake } from "discord.js";
 import type { GungnirClient } from "../../GungnirClient";
 import type { Resolver } from "../resolvers/Resolver";
 import { GungnirHandler } from "../GungnirHandler";
+import { MessageEmbed, Message } from "discord.js";
 import { GungnirError } from "../../GungnirError";
 import { GungnirModule } from "../GungnirModule";
 
@@ -114,6 +115,7 @@ export namespace Command {
   // define
 
   export function define(name: string): DefineDecorator {
+    name = name.toLowerCase();
     if (!/^[\w-]+$/.test(name))
       throw new GungnirError(`'${name}' is not a valid command name`);
     if (name.length > 32)
@@ -128,6 +130,7 @@ export namespace Command {
 
   export function guild(...guildIDs: Snowflake[]) {
     return {define(name: string): DefineDecorator {
+      name = name.toLowerCase();
       if (!/^[\w-]+$/.test(name))
         throw new GungnirError(`'${name}' is not a valid command name`);
       if (name.length > 32)
@@ -240,7 +243,16 @@ export namespace Command {
     public abstract isInteraction(): this is InteractionContext;
     public abstract isMessage(): this is MessageContext;
 
-    public abstract send(content: string, embed?: MessageEmbed): Promise<Message>;
+    public abstract send(options: Context.SendOptions): Promise<Message>;
+    public abstract send(content: string, options?: Context.SendOptions): Promise<Message>;
+    public abstract send(embed: MessageEmbed, options?: Context.SendOptions): Promise<Message>;
+  }
+  export namespace Context {
+    export interface SendOptions {
+      content?: string;
+      embed?: MessageEmbed;
+      ephemeral?: boolean;
+    }
   }
 
   export class InteractionContext extends Context {
@@ -257,14 +269,26 @@ export namespace Command {
     public isMessage(): this is MessageContext {return false}
 
     #sent = false;
-    public async send(content: string, embed?: MessageEmbed): Promise<Message> {
-      if (this.#sent) {
-        const raw = await this.interaction.webhook.send(content, {embeds: embed ? [embed] : undefined});
-        return this.channel.messages.add(raw);
-      } else {
-        const msg = await this.interaction.editReply(content, {embeds: embed ? [embed] : undefined}) as Message;
-        this.#sent = true;
-        return msg;
+    public send(options: Context.SendOptions): Promise<Message>;
+    public send(content: string, options?: Context.SendOptions): Promise<Message>;
+    public send(embed: MessageEmbed, options?: Context.SendOptions): Promise<Message>;
+    public async send(arg: string | MessageEmbed | Context.SendOptions, options?: Context.SendOptions): Promise<Message> {
+      if (typeof arg == "string") return this.send({...options, content: arg});
+      else if (arg instanceof MessageEmbed) return this.send({...options, embed: arg});
+      else {
+        const {content, embed, ephemeral} = arg;
+        if (this.#sent) {
+          const raw = await this.interaction.webhook.send(content, {embeds: embed ? [embed] : undefined});
+          return this.channel.messages.add(raw);
+        } else if (this.interaction.deferred) {
+          const msg = await this.interaction.editReply({content: content ?? null, embeds: embed ? [embed] : undefined}) as Message;
+          this.#sent = true;
+          return msg;
+        } else {
+          await this.interaction.reply({content, embed, ephemeral});
+          const res = await this.interaction.fetchReply();
+          return res instanceof Message ? res : this.channel.messages.add(res);
+        }
       }
     }
   }
@@ -280,8 +304,13 @@ export namespace Command {
     public isInteraction(): this is InteractionContext {return false}
     public isMessage(): this is MessageContext {return true}
 
-    public send(content: string, embed?: MessageEmbed) {
-      return this.message.channel.send(content, {embed});
+    public send(options: Context.SendOptions): Promise<Message>;
+    public send(content: string, options?: Context.SendOptions): Promise<Message>;
+    public send(embed: MessageEmbed, options?: Context.SendOptions): Promise<Message>;
+    public async send(arg: string | MessageEmbed | Context.SendOptions, options?: Context.SendOptions): Promise<Message> {
+      if (typeof arg == "string") return this.send({...options, content: arg});
+      else if (arg instanceof MessageEmbed) return this.send({...options, embed: arg});
+      else return this.message.channel.send(arg);
     }
   }
 
@@ -348,10 +377,15 @@ export namespace Command {
 
     export class Builder {
       readonly #usage: Usage = [];
+      #optional = false;
+
       public argument(): Builder.Argument;
       public argument(arg: Usage.Argument): this;
       public argument(arg?: Usage.Argument) {
         if (arg) {
+          if (this.#optional)
+            throw new GungnirError("there cannot be any arguments after an optional argument");
+          if (arg.optional) this.#optional = true;
           this.#usage.push(arg);
           return this;
         } else {

@@ -1,4 +1,4 @@
-import type { ClientOptions, ClientEvents, Snowflake, User, CommandInteraction } from "discord.js";
+import type { ClientOptions, ClientEvents, Snowflake, User } from "discord.js";
 import type { Provider } from "./modules/providers/Provider";
 import { Inhibitor } from "./modules/inhibitors/Inhibitor";
 import { Resolver } from "./modules/resolvers/Resolver";
@@ -30,7 +30,7 @@ export class GungnirClient extends Client {
   public prepareCommand(command: Command, context: Command.Context) {}
   public commandSuccess(command: Command, context: Command.Context, result: unknown) {}
   public commandError(command: Command, context: Command.Context, error: unknown) {}
-  public unknownCommand(name: string, interaction: CommandInteraction) {}
+  public unknownCommand(name: string, context: Command.Context) {}
 
   // owners
   public owners = new Set<User>();
@@ -57,8 +57,6 @@ export interface GungnirClient extends Client {
   emit<E extends string | symbol>(event: Exclude<E, keyof GungnirClient.Events>, ...args: unknown[]): boolean;
   off<E extends keyof GungnirClient.Events>(event: E, listener: (...args: GungnirClient.Events[E]) => void): this;
   off<E extends string | symbol>(event: Exclude<E, keyof GungnirClient.Events>, listener: (...args: unknown[]) => void): this;
-  removeAllListeners<E extends keyof GungnirClient.Events>(event?: E): this;
-  removeAllListeners<E extends string | symbol>(event?: Exclude<E, keyof GungnirClient.Events>): this;
 }
 export namespace GungnirClient {
   export type Constructor = new (options?: Options) => GungnirClient;
@@ -88,7 +86,7 @@ export namespace GungnirClient {
     prepareCommand: [command: Command, context: Command.Context];
     commandSuccess: [command: Command, context: Command.Context, result: unknown];
     commandError: [command: Command, context: Command.Context, error: unknown];
-    unknownCommand: [name: string, interaction: CommandInteraction];
+    unknownCommand: [name: string, context: Command.Context];
   }
 
   // options

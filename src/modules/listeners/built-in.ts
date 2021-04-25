@@ -62,7 +62,7 @@ export class CommandsListener extends BuiltInListener {
       const value = args.shift();
       if (value === undefined) {
         if (arg.optional) return undefined;
-        else throw new GungnirError.Resolver("not enough args");
+        else throw new GungnirError.Resolver(`argument '${arg.name}' is not optional`);
       }
       for (const resolverName of arg.resolvers) {
         const resolver = this.client.resolverHandler.get(resolverName);
@@ -73,7 +73,7 @@ export class CommandsListener extends BuiltInListener {
       throw new GungnirError.Resolver("invalid resolver input");
     }));
     if (args.length > 0)
-      throw new GungnirError.Resolver("too many args");
+      throw new GungnirError.Resolver("too many arguments");
     return resolved;
   }
 
@@ -99,8 +99,9 @@ export class CommandsListener extends BuiltInListener {
     this.client.commandError(command, context, error);
   }
 
-  public async onUnknownCommand(name: string, interaction: CommandInteraction) {
-    this.client.unknownCommand(name, interaction);
+  @Listener.on("unknownCommand")
+  public async onUnknownCommand(name: string, context: Command.Context) {
+    this.client.unknownCommand(name, context);
   }
 
   // run commands
@@ -110,30 +111,31 @@ export class CommandsListener extends BuiltInListener {
     try {
       if (!this.useInteractions) return;
       if (!interaction.isCommand()) return;
+      const user = interaction.user;
+      const guild = interaction.guild;
+      const channel = interaction.channelID ?
+        (interaction.client.channels.resolve(interaction.channelID)
+        ?? await interaction.client.channels.fetch(interaction.channelID)
+        ) as TextChannel | NewsChannel : await user.createDM();
+      const member = guild?.members.resolve(user.id) ?? await guild?.members.fetch(user.id) ?? null;
+      const context = new Command.InteractionContext(interaction, user, channel, guild, member);
       const command = interaction.guild?.commandHandler.get(interaction.commandName)
       ?? this.client.commandHandler.get(interaction.commandName);
       if (command) {
         await interaction.defer(command.options.ephemeral);
-        const user = interaction.user;
-        const guild = interaction.guild;
-        const channel = interaction.channelID ?
-          (this.client.channels.resolve(interaction.channelID) ?? await this.client.channels.fetch(interaction.channelID)) as TextChannel | NewsChannel
-          : await user.createDM();
-        const member = guild?.members.resolve(user.id) ?? await guild?.members.fetch(user.id) ?? null;
-        const context = new Command.InteractionContext(interaction, user, channel, guild, member);
         this.client.emit("command", command, context);
         const inhibitors = await this.runInhibitors(command, context);
-        if (inhibitors.length > 0)
+        if (inhibitors.length > 0) {
           this.client.emit("commandInhibited", command, context, inhibitors as [Inhibitor, ...Inhibitor[]]);
-        else {
+        } else {
           try {
             const args = await this.runResolvers(command, context, interaction.options.map(o => {
               if (o.type == "SUB_COMMAND" || o.type == "SUB_COMMAND_GROUP")
-                throw new GungnirError("sub commands are not supported");
+                throw new GungnirError("sub commands are not currently supported");
               return o.type == "USER" ? o.user as User
               : o.type == "CHANNEL" ? o.channel as GuildChannel
               : o.type == "ROLE" ? o.role as Role
-              : o.value as string | number | boolean
+              : o.value as string | number | boolean;
             }));
             this.client.emit("prepareCommand", command, context);
             try {
@@ -149,7 +151,7 @@ export class CommandsListener extends BuiltInListener {
           }
         }
       } else {
-        this.client.emit("unknownCommand", interaction.commandName, interaction);
+        this.client.emit("unknownCommand", interaction.commandName, context);
       }
     } catch(err) {
       this.client.emit("error", err);
@@ -158,8 +160,8 @@ export class CommandsListener extends BuiltInListener {
 
   @Listener.on("message")
   public async onMessage(msg: Message) {
-    if (!this.useMessages) return;
     try {
+      if (!this.useMessages) return;
       // todo: parse message to execute commands
     } catch(err) {
       this.client.emit("error", err);

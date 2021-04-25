@@ -38,6 +38,7 @@ export namespace Resolver {
   export function define<R extends keyof Resolvers>(name: R): DefineDecorator<Type, Resolvers[R]>;
   export function define<S extends string>(name: Exclude<S, keyof Resolvers>): DefineDecorator;
   export function define(name: string): DefineDecorator {
+    name = name.toLowerCase();
     if (!/^[\w-]+$/.test(name))
       throw new GungnirError(`'${name}' is not a valid resolver name`);
     if (name.length > 32)

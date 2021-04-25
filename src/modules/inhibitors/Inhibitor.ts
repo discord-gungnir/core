@@ -21,6 +21,7 @@ export namespace Inhibitor {
   // decorators
 
   export function define(name: string): DefineDecorator {
+    name = name.toLowerCase();
     if (!/^[\w-]+$/.test(name))
       throw new GungnirError(`'${name}' is not a valid inhibitor name`);
     if (name.length > 32)

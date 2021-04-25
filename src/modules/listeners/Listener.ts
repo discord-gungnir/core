@@ -46,6 +46,7 @@ export namespace Listener {
   // decorators
 
   export function define(name: string): DefineDecorator {
+    name = name.toLowerCase();
     if (!/^[\w-]+$/.test(name))
       throw new GungnirError(`'${name}' is not a valid listener name`);
     if (name.length > 32)

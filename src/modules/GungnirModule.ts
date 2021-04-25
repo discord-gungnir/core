@@ -6,11 +6,13 @@ import type { Disableable } from "../types";
 export abstract class GungnirModule implements Disableable {
   readonly #modules = getModules(this.handler);
 
+  public readonly name: string;
   public readonly client: GungnirClient;
-  public constructor(public readonly handler: GungnirHandler<GungnirModule>, public readonly name: string, type: string) {
-    if (!/^[\w-]+$/.test(name)) throw new GungnirError(`'${name}' is not a valid ${type} name`);
-    if (name.length > 32) throw new GungnirError(`${type} names can't be more than 32 characters long`);
-    if (this.#modules.has(name)) throw new GungnirError(`a ${type} called '${name}' already exists`);
+  public constructor(public readonly handler: GungnirHandler<GungnirModule>, name: string, type: string) {
+    this.name = name.toLowerCase();
+    if (!/^[\w-]+$/.test(this.name)) throw new GungnirError(`'${this.name}' is not a valid ${type} name`);
+    if (this.name.length > 32) throw new GungnirError(`${type} names can't be more than 32 characters long`);
+    if (this.#modules.has(this.name)) throw new GungnirError(`a ${type} called '${this.name}' already exists`);
     this.#modules.set(this.name, this);
     this.client = handler.client;
     (async () => {
