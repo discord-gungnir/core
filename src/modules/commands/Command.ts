@@ -245,11 +245,13 @@ export namespace Command {
 
   export class InteractionContext extends Context {
     public readonly client = this.interaction.client as GungnirClient;
-    public readonly user = this.interaction.user;
-    public readonly channel = this.interaction.channel as TextChannel | NewsChannel | DMChannel;
-    public readonly guild = this.interaction.guild;
-    public readonly member = this.interaction.member as GuildMember | null;
-    public constructor(public readonly interaction: CommandInteraction) {super()}
+    public constructor(
+      public readonly interaction: CommandInteraction,
+      public readonly user: User,
+      public readonly channel: TextChannel | NewsChannel | DMChannel,
+      public readonly guild: Guild | null,
+      public readonly member: GuildMember | null
+    ) {super()}
 
     public isInteraction(): this is InteractionContext {return true}
     public isMessage(): this is MessageContext {return false}

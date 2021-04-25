@@ -19,9 +19,12 @@ export abstract class GungnirHandler<M extends GungnirModule & {handler: Gungnir
     return this.#modules.get(name);
   }
 
-  // iterate
+  // misc
   [Symbol.iterator]() {
     return this.#modules.values();
+  }
+  public get size() {
+    return this.#modules.size;
   }
   public get array() {
     return Array.from(this);

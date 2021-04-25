@@ -1,4 +1,4 @@
-import type { Message, Interaction, User, GuildChannel, Role } from "discord.js";
+import type { Message, Interaction, User, GuildChannel, Role, TextChannel, NewsChannel, CommandInteraction } from "discord.js";
 import type { Inhibitor } from "../inhibitors/Inhibitor";
 import { GungnirError } from "../../GungnirError";
 import { Command } from "../commands/Command";
@@ -37,13 +37,15 @@ export class LifecycleListener extends BuiltInListener {
   }
 
   @Listener.on("error")
-  public onError(error: Error) {
+  public onError(error: unknown) {
     this.client.error(error);
   }
 }
 
 @Listener.define("commands")
 export class CommandsListener extends BuiltInListener {
+
+  // util
 
   public useInteractions = true;
   public useMessages = false;
@@ -60,7 +62,7 @@ export class CommandsListener extends BuiltInListener {
       const value = args.shift();
       if (value === undefined) {
         if (arg.optional) return undefined;
-        else throw new GungnirError("not enough args");
+        else throw new GungnirError.Resolver("not enough args");
       }
       for (const resolverName of arg.resolvers) {
         const resolver = this.client.resolverHandler.get(resolverName);
@@ -68,30 +70,64 @@ export class CommandsListener extends BuiltInListener {
         const resolved = await resolver.resolve(value, context);
         if (resolved !== null) return resolved;
       }
-      throw new GungnirError("invalid resolver input");
+      throw new GungnirError.Resolver("invalid resolver input");
     }));
     if (args.length > 0)
-      throw new GungnirError("too many args");
+      throw new GungnirError.Resolver("too many args");
     return resolved;
   }
 
+  // events
+
+  @Listener.on("commandInhibited")
+  public async onCommandInhibited(command: Command, context: Command.Context, inhibitors: [Inhibitor, ...Inhibitor[]]) {
+    this.client.commandInhibited(command, context, inhibitors);
+  }
+
+  @Listener.on("prepareCommand")
+  public async onPrepareCommand(command: Command, context: Command.Context) {
+    this.client.prepareCommand(command, context);
+  }
+
+  @Listener.on("commandSuccess")
+  public async onCommandSuccess(command: Command, context: Command.Context, result: unknown) {
+    this.client.commandSuccess(command, context, result);
+  }
+
+  @Listener.on("commandError")
+  public async onCommandError(command: Command, context: Command.Context, error: unknown) {
+    this.client.commandError(command, context, error);
+  }
+
+  public async onUnknownCommand(name: string, interaction: CommandInteraction) {
+    this.client.unknownCommand(name, interaction);
+  }
+
+  // run commands
+
   @Listener.on("interaction")
-  public async onInteraction(intr: Interaction) {
+  public async onInteraction(interaction: Interaction) {
     try {
       if (!this.useInteractions) return;
-      if (!intr.isCommand()) return;
-      const command = intr.guild?.commandHandler.get(intr.commandName)
-      ?? this.client.commandHandler.get(intr.commandName);
+      if (!interaction.isCommand()) return;
+      const command = interaction.guild?.commandHandler.get(interaction.commandName)
+      ?? this.client.commandHandler.get(interaction.commandName);
       if (command) {
-        await intr.defer(command.options.ephemeral);
-        const context = new Command.InteractionContext(intr);
+        await interaction.defer(command.options.ephemeral);
+        const user = interaction.user;
+        const guild = interaction.guild;
+        const channel = interaction.channelID ?
+          (this.client.channels.resolve(interaction.channelID) ?? await this.client.channels.fetch(interaction.channelID)) as TextChannel | NewsChannel
+          : await user.createDM();
+        const member = guild?.members.resolve(user.id) ?? await guild?.members.fetch(user.id) ?? null;
+        const context = new Command.InteractionContext(interaction, user, channel, guild, member);
         this.client.emit("command", command, context);
         const inhibitors = await this.runInhibitors(command, context);
         if (inhibitors.length > 0)
           this.client.emit("commandInhibited", command, context, inhibitors as [Inhibitor, ...Inhibitor[]]);
         else {
           try {
-            const args = await this.runResolvers(command, context, intr.options.map(o => {
+            const args = await this.runResolvers(command, context, interaction.options.map(o => {
               if (o.type == "SUB_COMMAND" || o.type == "SUB_COMMAND_GROUP")
                 throw new GungnirError("sub commands are not supported");
               return o.type == "USER" ? o.user as User
@@ -107,13 +143,13 @@ export class CommandsListener extends BuiltInListener {
               this.client.emit("commandError", command, context, err);
             }
           } catch(err) {
-            if (err instanceof GungnirError) {
-              console.error(err);
+            if (err instanceof GungnirError.Resolver) {
+              this.client.emit("commandResolverError", command, context, err);
             } else throw err;
           }
         }
       } else {
-        this.client.emit("unknownCommand", intr.commandName, intr);
+        this.client.emit("unknownCommand", interaction.commandName, interaction);
       }
     } catch(err) {
       this.client.emit("error", err);

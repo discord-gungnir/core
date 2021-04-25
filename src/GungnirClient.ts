@@ -4,6 +4,7 @@ import { Inhibitor } from "./modules/inhibitors/Inhibitor";
 import { Resolver } from "./modules/resolvers/Resolver";
 import { Listener } from "./modules/listeners/Listener";
 import { Command } from "./modules/commands/Command";
+import type { GungnirError } from "./GungnirError";
 import { Client, Intents } from "discord.js";
 
 export class GungnirClient extends Client {
@@ -24,7 +25,12 @@ export class GungnirClient extends Client {
 
   // events
   public init(): void {}
-  public error(error: Error): void {}
+  public error(error: unknown): void {}
+  public commandInhibited(command: Command, context: Command.Context, inhibitors: [Inhibitor, ...Inhibitor[]]) {}
+  public prepareCommand(command: Command, context: Command.Context) {}
+  public commandSuccess(command: Command, context: Command.Context, result: unknown) {}
+  public commandError(command: Command, context: Command.Context, error: unknown) {}
+  public unknownCommand(name: string, interaction: CommandInteraction) {}
 
   // owners
   public owners = new Set<User>();
@@ -78,6 +84,7 @@ export namespace GungnirClient {
   export interface Events extends ClientEvents {
     command: [command: Command, context: Command.Context];
     commandInhibited: [command: Command, context: Command.Context, inhibitors: [Inhibitor, ...Inhibitor[]]];
+    commandResolverError: [command: Command, context: Command.Context, error: GungnirError.Resolver];
     prepareCommand: [command: Command, context: Command.Context];
     commandSuccess: [command: Command, context: Command.Context, result: unknown];
     commandError: [command: Command, context: Command.Context, error: unknown];

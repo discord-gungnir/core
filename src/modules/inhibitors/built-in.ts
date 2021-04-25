@@ -12,7 +12,7 @@ export class OwnerOnlyInhibitor extends Inhibitor {
 @Inhibitor.define("adminOnly")
 export class AdminOnlyInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
-    return (cmd.options.adminOnly && ctx.member?.admin) ?? false;
+    return cmd.options.adminOnly && !!ctx.member?.admin;
   }
 }
 
