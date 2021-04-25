@@ -11,7 +11,7 @@ interface ListenerEvent {
 
 const listeners = new Map<string, Listener.Constructor>();
 export abstract class Listener extends GungnirModule {
-  readonly #callbacks: {event: string, callback: Function}[] = [];
+  readonly #callbacks: {event: string, callback: (...args: any[]) => any}[] = [];
   public constructor(public readonly handler: Listener.Handler, name: string) {
     super(handler, name, "listener");
 
@@ -29,7 +29,7 @@ export abstract class Listener extends GungnirModule {
 
   public delete() {
     for (const {event, callback} of this.#callbacks)
-      this.client.off(event, callback as any);
+      this.client.off(event, callback);
     return super.delete();
   }
 }
@@ -80,15 +80,23 @@ export namespace Listener {
   // make
 
   type AttachEvent = <E extends string>(event: E, method: EventMethod<E>) => void;
+
+  /**
+   * A utility function to create new listeners without needing to extend classes
+   * @param events Function used to add events to listen to
+   */
   export function make(events: (on: AttachEvent, once: AttachEvent) => void) {
     const MadeListener = (() => class extends Listener {})();
     events((event: string, method: Function) => {
       let key = Symbol(event);
+      Object.defineProperty(MadeListener.prototype, key, {
+        configurable: true, writable: true, enumerable: false, value: method});
       (MadeListener.prototype as any)[key] = method;
       attachEvent(MadeListener.prototype, key, event, false);
     }, (event: string, method: Function) => {
       let key = Symbol(event);
-      (MadeListener.prototype as any)[key] = method;
+      Object.defineProperty(MadeListener.prototype, key, {
+        configurable: true, writable: true, enumerable: false, value: method});
       attachEvent(MadeListener.prototype, key, event, true);
     });
     return MadeListener;

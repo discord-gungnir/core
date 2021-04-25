@@ -10,5 +10,5 @@ declare module "discord.js" {
 }
 Structures.extend("GuildMember", GuildMember => class extends GuildMember {
   public readonly client!: GungnirClient;
-  public readonly data: Provider.DataAccessor<this> = new Provider.DataAccessor(this, `guild:${this.guild.id}/member:${this.id}`);
+  public readonly data = new Provider.DataAccessor(this, `guild:${this.guild.id}/member:${this.id}`);
 });

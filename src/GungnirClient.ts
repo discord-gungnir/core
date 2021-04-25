@@ -6,6 +6,7 @@ import { Listener } from "./modules/listeners/Listener";
 import { Command } from "./modules/commands/Command";
 import type { GungnirError } from "./GungnirError";
 import { Client, Intents } from "discord.js";
+import type { Prefix } from "./types";
 
 export class GungnirClient extends Client {
   public options!: GungnirClient.Options;
@@ -21,6 +22,19 @@ export class GungnirClient extends Client {
   public constructor(options?: GungnirClient.Options) {
     super({intents: Intents.NON_PRIVILEGED, ...options});
     this.provider = options?.provider?.(this) ?? null;
+  }
+
+  // prefix
+  public get prefix() {
+    return this.options.prefix ?? "/";
+  }
+  public set prefix(prefix) {
+    this.options.prefix = prefix;
+  }
+
+  // data
+  public get data() {
+    return this.user?.data ?? null;
   }
 
   // events
@@ -95,7 +109,7 @@ export namespace GungnirClient {
     provider?: (client: GungnirClient) => Provider;
     useProviderCache?: boolean;
     owners?: Snowflake[];
-    production?: boolean;
+    prefix?: Prefix;
   }
 
   /**
@@ -126,5 +140,18 @@ export namespace GungnirClient {
    */
   export function owners(...owners: Snowflake[]) {
     return options({owners});
+  }
+
+  export function prefix(prefix: Prefix) {
+    return options({prefix});
+  }
+
+  export function perGuildPrefix(defaultPrefix: Prefix = "/") {
+    return prefix(async msg => {
+      const prefix = await msg.guild?.data.get("prefix");
+      if (typeof prefix == "string") return prefix;
+      return typeof defaultPrefix == "function" ?
+        defaultPrefix(msg) : defaultPrefix;
+    });
   }
 }

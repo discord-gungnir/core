@@ -2,14 +2,14 @@ import type { GuildMember, TextChannel } from "discord.js";
 import type { Command } from "../commands/Command";
 import { Inhibitor } from "./Inhibitor";
 
-@Inhibitor.define("ownerOnly")
+@Inhibitor.define("owner-only")
 export class OwnerOnlyInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
     return cmd.options.ownerOnly && !ctx.user.owner;
   }
 }
 
-@Inhibitor.define("adminOnly")
+@Inhibitor.define("admin-only")
 export class AdminOnlyInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
     return cmd.options.adminOnly && !!ctx.member?.admin;
@@ -23,21 +23,21 @@ export class NSFWInhibitor extends Inhibitor {
   }
 }
 
-@Inhibitor.define("denyBots")
+@Inhibitor.define("deny-bots")
 export class DenyBotsInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
     return !cmd.options.allowBots && ctx.user.bot;
   }
 }
 
-@Inhibitor.define("guildOnly")
+@Inhibitor.define("guild-only")
 export class GuildOnlyInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
     return cmd.options.usedIn == "guild" && ctx.channel.type == "dm";
   }
 }
 
-@Inhibitor.define("dmOnly")
+@Inhibitor.define("dm-only")
 export class DMOnlyInhibitor extends Inhibitor {
   public inhibit(cmd: Command, ctx: Command.Context) {
     return cmd.options.usedIn == "dm" && ctx.channel.type != "dm";
@@ -56,7 +56,7 @@ abstract class PermissionsInhibitor extends Inhibitor {
   }
 }
 
-@Inhibitor.define("userPermissions")
+@Inhibitor.define("user-permissions")
 export class UserPermissionsInhibitor extends PermissionsInhibitor {
   protected readonly permissions = "userPermissions";
   protected getMember(ctx: Command.Context) {
@@ -64,7 +64,7 @@ export class UserPermissionsInhibitor extends PermissionsInhibitor {
   }
 }
 
-@Inhibitor.define("clientPermissions")
+@Inhibitor.define("client-permissions")
 export class ClientPermissionsInhibitor extends PermissionsInhibitor {
   protected readonly permissions = "clientPermissions";
   protected getMember(ctx: Command.Context) {

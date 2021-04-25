@@ -10,7 +10,7 @@ declare module "discord.js" {
 }
 Structures.extend("User", User => class extends User {
   public readonly client!: GungnirClient;
-  public readonly data: Provider.DataAccessor<this> = new Provider.DataAccessor(this, `user:${this.id}`);
+  public readonly data = new Provider.DataAccessor(this, `user:${this.id}`);
   public get owner(): boolean {
     return this.client.isOwner(this);
   }

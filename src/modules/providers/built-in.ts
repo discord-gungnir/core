@@ -49,7 +49,7 @@ export namespace JSONProvider {
   /**
    * Use a JSON provider
    * @param path The path to where data needs to be stored
-   * @param cache Whether or not to cache the results returned by the provider, defaults to true
+   * @param cache Whether or not to cache the results returned by the provider, enabled by default
    */
    export function provide(path: string, cached?: boolean) {
     return GungnirClient.provider(() => new JSONProvider(path), cached);

@@ -35,10 +35,8 @@ export namespace Resolver {
 
   // decorators
 
-  export function define<R extends keyof Resolvers>(name: R): DefineDecorator<Type, Resolvers[R]>;
-  export function define<S extends string>(name: Exclude<S, keyof Resolvers>): DefineDecorator;
-  export function define(name: string): DefineDecorator {
-    name = name.toLowerCase();
+  export function define<R extends string>(name: R): DefineDecorator<Type, Resolvers[R]> {
+    name = name.toLowerCase() as R;
     if (!/^[\w-]+$/.test(name))
       throw new GungnirError(`'${name}' is not a valid resolver name`);
     if (name.length > 32)
@@ -62,6 +60,36 @@ export namespace Resolver {
       public readonly type = type;
       public resolve(value: Value<T>, context: Command.Context): OptionalPromise<R | null> {
         return resolve.call(this, value, context);
+      }
+    }
+  }
+
+  /**
+   * Create a new resolver that is the union of two or more resolvers
+   * @param resolvers The name of the resolvers to use
+   */
+  export function union<R extends string>(...resolvers: R[]) {
+    return class extends Resolver<Type, Resolvers[R]> {
+      public get resolvers() {
+        return resolvers.map(name => {
+          const resolver = this.client.resolverHandler.get(name);
+          if (!resolver) throw new GungnirError(`unknown resolver '${name}'`);
+          else return resolver;
+        });
+      }
+      public get type() {
+        return this.resolvers.reduce((resolver1, resolver2) => {
+          if (resolver1.type != resolver2.type)
+            throw new GungnirError(`all resolvers need to be of the same type in an union`);
+          return resolver2;
+        }).type;
+      }
+      public async resolve(value: Value<Type>, context: Command.Context): Promise<Resolvers[R]> {
+        for (const resolver of this.resolvers) {
+          const res = await resolver.resolve(value, context);
+          if (res !== null) return res;
+        }
+        return null;
       }
     }
   }

@@ -1,11 +1,15 @@
-import type { Guild, TextChannel, NewsChannel, GuildMember, PermissionResolvable, DMChannel, User, CommandInteraction,
-  ApplicationCommandManager, ApplicationCommandData, ApplicationCommandOptionType, Snowflake } from "discord.js";
+import type { TextChannel, NewsChannel, GuildMember, PermissionResolvable, DMChannel, User, CommandInteraction, Snowflake,
+  ApplicationCommand, ApplicationCommandManager, ApplicationCommandData, ApplicationCommandOptionType } from "discord.js";
+import type { Includes, Trim, TrimLeft, TrimRight } from "../../util";
+import { MessageEmbed, Message, Guild } from "discord.js";
 import type { GungnirClient } from "../../GungnirClient";
-import type { Resolver } from "../resolvers/Resolver";
+import type { Resolvers } from "../resolvers/built-in";
 import { GungnirHandler } from "../GungnirHandler";
-import { MessageEmbed, Message } from "discord.js";
 import { GungnirError } from "../../GungnirError";
 import { GungnirModule } from "../GungnirModule";
+
+
+const INIT = Symbol("command handler init");
 
 const commands = new Map<string, Command.Constructor>();
 const guildCommands = new Map<string, Map<string, Command.Constructor>>();
@@ -13,6 +17,7 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
   public abstract run(context: Command.Context, ...args: P): unknown;
   
   public options: Required<Command.Options>;
+  public slashCommand: ApplicationCommand | null = null;
   public constructor(public readonly handler: Command.Handler, name: string, options?: Command.Options) {
     super(handler, name, "command");
     this.options = {
@@ -30,12 +35,14 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
       ...options
     };
 
-    /*(async () => {
+    (async () => {
       await this.client.ready;
+      if (!this.handler[INIT]) return;
+
       const commands = this.handler.guild ? this.handler.guild.commands
       : this.client.application?.commands as ApplicationCommandManager;
-      commands.create(this.slashCommandData);
-    })();*/
+      this.slashCommand = await commands.create(this.slashCommandData);
+    })();
   }
 
   // usage
@@ -51,19 +58,6 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
   public set usageString(usage) {
     this.usage = Command.Usage.fromString(usage);
   }
-  public get usageResolverTypes() {
-    return this.usage.map(arg => {
-      return arg.resolvers.map(name => {
-        const resolver = this.client.resolverHandler.get(name);
-        if (!resolver) throw new GungnirError(`unknown resolver '${name}'`)
-        return resolver;
-      }).reduce((acc, resolver) => {
-        if (resolver.type != acc.type)
-          throw new GungnirError("resolver must be of the same type within an argument");
-        return resolver;
-      }).type;
-    });
-  }
 
   // group & description
   public get group() {
@@ -78,29 +72,35 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
   public set description(description) {
     if (description !== null && description.length > 100)
       throw new GungnirError("a command's description can't be more than a 100 characters long");
+    //this.slashCommand?.edit({description: description ?? "No description"});
     this.options.description = description;
   }
 
-  // slash commands
+  // misc
+  public delete() {
+    if (this.deleted) return;
+    this.slashCommand?.delete();
+    super.delete();
+  }
   public get slashCommandData(): ApplicationCommandData {
-    const types = this.usageResolverTypes;
-    let i = 0;
     return {
       name: this.name,
-      description: this.description ?? "No description",
-      options: this.usage.map(arg => ({
-        name: arg.name, description: arg.description,
-        required: !arg.optional,
-        type: ((): ApplicationCommandOptionType => {
-          const type = types[i++] as Resolver.Type;
-          return type == "boolean" ? "BOOLEAN"
-          : type == "channel" ? "CHANNEL"
-          : type == "integer" ? "INTEGER"
-          : type == "role" ? "ROLE"
-          : type == "string"  ? "STRING"
+      description: this.description || "No description",
+      options: this.usage.map(arg => {
+        const resolver = this.client.resolverHandler.get(arg.resolver);
+        if (!resolver) throw new GungnirError(`unknown resolver ${arg.resolver}`);
+        return {
+          name: arg.name,
+          description: arg.description || "No description",
+          required: !arg.optional,
+          type: resolver.type == "boolean" ? "BOOLEAN"
+          : resolver.type == "channel" ? "CHANNEL"
+          : resolver.type == "integer" ? "INTEGER"
+          : resolver.type == "role" ? "ROLE"
+          : resolver.type == "string"  ? "STRING"
           : "USER"
-        })()
-      }))
+        };
+      })
     };
   }
 }
@@ -110,7 +110,7 @@ export namespace Command {
   export type DefineDecorator<P extends unknown[] = unknown[]> = <T extends Constructor<P>>(klass: T) => T;
   export type Decorator<P extends unknown[] = unknown[]> = <T extends AbstractConstructor<P>>(klass: T) => T;
   export type Parameters<C extends Command> = C extends Command<infer P> ? P : never;
-  //export type FromUsage<S extends string> = Command<Usage.Parse<S>>;
+  export type FromUsage<S extends string> = Command<Usage.Parse<S>>;
 
   // define
 
@@ -146,6 +146,22 @@ export namespace Command {
         return klass;
       }
     }};
+  }
+
+  // make
+
+  /**
+   * A utility function to create new commands without needing to extend classes
+   * @param usage The usage string
+   * @param resolve The resolver resolve method
+   * @param options The command options
+   */
+  export function make<U extends string, R>(usage: U, run: (this: Command.FromUsage<U>, context: Context, ...args: Usage.Parse<U>) => R, options?: Options) {
+    return class extends Command<Usage.Parse<U>> {
+      public run(context: Context, ...args: Usage.Parse<U>): R {
+        return run.call(this, context, ...args);
+      }
+    }
   }
 
   // options
@@ -310,7 +326,8 @@ export namespace Command {
     public async send(arg: string | MessageEmbed | Context.SendOptions, options?: Context.SendOptions): Promise<Message> {
       if (typeof arg == "string") return this.send({...options, content: arg});
       else if (arg instanceof MessageEmbed) return this.send({...options, embed: arg});
-      else return this.message.channel.send(arg);
+      const {content, embed} = arg;
+      return this.message.channel.send({content, embed});
     }
   }
 
@@ -328,7 +345,7 @@ export namespace Command {
     public constructor(parent: GungnirClient | Guild | Command) {
       super("client" in parent ? parent.client as GungnirClient : parent);
       this.command = parent instanceof Command ? parent : null;
-      this.guild = "id" in parent ? parent : null;
+      this.guild = parent instanceof Guild ? parent : null;
 
       if (this.command) {
         
@@ -346,30 +363,36 @@ export namespace Command {
       this.initSlashCommands();
     }
 
+    private [INIT] = false;
     private async initSlashCommands() {
       await this.client.ready;
 
       if (!this.command) {
         const commands = this.guild ? this.guild.commands
         : this.client.application?.commands as ApplicationCommandManager;
-        commands.set(this.array.map(command => command.slashCommandData));
+
+        this[INIT] = true;
+        const appCommands = await commands.set(this.array.map(command => command.slashCommandData));
+        for (const appCommand of appCommands.values()) {
+          const command = this.get(appCommand.name);
+          if (command) command.slashCommand = appCommand;
+        }
       }
     }
   }
 
   // usage
 
-  export function usage(usage: string | Usage): Decorator {
-    if (typeof usage == "string") usage = Usage.fromString(usage);
-    return options({usage});
+  export function usage<U extends string>(usage: U): Decorator<Usage.Parse<U>> {
+    return options({usage: Usage.fromString(usage)});
   }
 
   export type Usage = Usage.Argument[];
   export namespace Usage {
     export interface Argument {
       name: string;
-      description: string;
-      resolvers: [string, ...string[]];
+      description: string | null;
+      resolver: string;
       optional: boolean;
     }
 
@@ -400,7 +423,7 @@ export namespace Command {
       interface WIPArgument {
         name: string | null;
         description: string | null;
-        resolvers: string[];
+        resolver: string | null;
         optional: boolean;
       }
 
@@ -408,7 +431,7 @@ export namespace Command {
         readonly #builder: Builder;
         readonly #arg: WIPArgument = {
           name: null, description: null,
-          resolvers: [], optional: false};
+          resolver: null, optional: false};
         public constructor(builder: Builder) {
           this.#builder = builder;
         }
@@ -420,20 +443,18 @@ export namespace Command {
           this.#arg.name = name;
           return this;
         }
-        public description(description: string) {
-          if (description.length > 100)
+        public description(description: string | null) {
+          if (description !== null && description.length > 100)
             throw new GungnirError("an argument's description can't be more than a 100 characters long");
           this.#arg.description = description;
           return this;
         }
-        public resolvers(...resolvers: string[]) {
-          this.#arg.resolvers.push(...resolvers.map(resolver => {
-            if (!/^[\w-]+$/.test(resolver))
-              throw new GungnirError(`'${resolver}' is not a valid resolver name`);
-            if (resolver.length > 32)
-              throw new GungnirError(`resolver names can't be more than 32 characters long`);
-            return resolver;
-          }));
+        public resolver(resolver: string) {
+          if (!/^[\w-]+$/.test(resolver))
+            throw new GungnirError(`'${resolver}' is not a valid resolver name`);
+          if (resolver.length > 32)
+            throw new GungnirError(`resolver names can't be more than 32 characters long`);
+          this.#arg.resolver = resolver;
           return this;
         }
         public optional(optional = true) {
@@ -441,8 +462,8 @@ export namespace Command {
           return this;
         }
         public add() {
-          if (this.#arg.resolvers.length == 0)
-            throw new GungnirError("argument needs at least one resolver");
+          if (this.#arg.name === null) throw new GungnirError("argument has no name");
+          if (this.#arg.resolver === null) throw new GungnirError("argument has no resolver");
           this.#builder.argument(this.#arg as Usage.Argument);
           return this.#builder;
         }
@@ -451,19 +472,68 @@ export namespace Command {
 
     // string to usage
 
-    export type FromString<S extends string> = Usage;
+    type FromStringArgumentToObject<N extends string, R extends string, D extends string | null, O extends boolean> =
+      N extends "" ? never : D extends "" ? never : R extends "" ? never
+      : Includes<N, " "> extends true ? never : Includes<R, " "> extends true ? never
+      : {name: N, description: D, resolver: R, optional: O};
 
-    type ArgMatches = {name: string, description: string, optional?: string, resolvers?: string};
-    const regex = /(?<arg>{(?:\s*\[\s*(?<resolvers>(?:[\w]+(?:,\s*|(?=\s*])))+)\s*])?\s*(?<name>[\w-]+)\s*(?<optional>\?)?\s*:(?<description>[^}]+)})|(?<error>[^\s]+)/g;
-    export function fromString<S extends string>(usage: S): FromString<S> {
+    type FromStringArgument<S extends string> =
+      TrimRight<S> extends `{${infer N}:${infer R}|${infer D}}` ?
+        Trim<N> extends `${infer M}?` ? FromStringArgumentToObject<TrimRight<M>, Trim<R>, Trim<D>, true>
+        : FromStringArgumentToObject<Trim<N>, Trim<R>, Trim<D>, false>
+      : TrimRight<S> extends `{${infer N}|${infer D}}` ?
+        Trim<N> extends `${infer M}?` ? FromStringArgumentToObject<TrimRight<M>, TrimRight<M>, Trim<D>, true>
+        : FromStringArgumentToObject<Trim<N>, Trim<N>, Trim<D>, false>
+      : TrimRight<S> extends `{${infer N}:${infer R}}` ?
+        Trim<N> extends `${infer M}?` ? FromStringArgumentToObject<TrimRight<M>, Trim<R>, null, true>
+        : FromStringArgumentToObject<Trim<N>, Trim<R>, null, false>
+      : TrimRight<S> extends `{${infer N}}` ?
+        Trim<N> extends `${infer M}?` ? FromStringArgumentToObject<TrimRight<M>, TrimRight<M>, null, true>
+        : FromStringArgumentToObject<Trim<N>, Trim<N>, null, false>
+      : never;
+
+    export type FromString<U extends string> =
+      U extends `${infer S}` ?
+        TrimLeft<S> extends `{${infer L}}${infer R}` ? [FromStringArgument<`{${L}}`>, ...FromString<R>]
+        : Trim<S> extends "" ? [] : never
+      : Usage;
+
+    type ToSignatureArgument<A extends Argument> =
+      A["optional"] extends false ? Resolvers[Lowercase<A["resolver"]>]
+      : Resolvers[Lowercase<A["resolver"]>] | undefined;
+
+    export type ToSignature<U extends Argument[]> =
+      U extends [] ? []
+      : U extends [infer L, ...infer R] ?
+        L extends Argument ? R extends Argument[] ?
+          [ToSignatureArgument<L>, ...ToSignature<R>]
+          : never : never : never;
+
+    export type Parse<S extends string> = ToSignature<FromString<S>>;
+
+    type ArgMatches = {name: string, description?: string, resolver?: string, optional?: string};
+    const regex = /(?<arg>{(?<name>[^?:}]+)(?<optional>\?)?(?::(?<resolver>[^}|]+))?(?:\|(?<description>[^}]+))?})|(?<error>\S+)/g;
+    export function fromString<S extends string>(usage: S) {
       const builder = new Builder();
       for (const match of usage.matchAll(regex)) {
         if (!match.groups?.["arg"]) throw new GungnirError(`unknown syntax error in the usage string '${usage.trim()}'`);
-        const {name, description, optional, resolvers} = match.groups as ArgMatches;
-        builder.argument().name(name).description(description).optional(!!optional)
-        .resolvers(...(resolvers ? resolvers.split(",").map(r => r.trim()) : [name])).add();
+        const {name, description, resolver, optional} = match.groups as ArgMatches;
+        builder.argument().name(name.trim())
+        .description(description?.trim() ?? null)
+        .resolver(resolver?.trim() ?? name?.trim())
+        .optional(!!optional).add();
       }
-      return builder.build();
+      return builder.build() as FromString<S>;
+    }
+
+    export function toString<U extends Usage>(usage: U) {
+      return usage.map(arg => {
+        let str = `{${arg.name}`;
+        if (arg.optional) str += "?";
+        if (arg.name != arg.resolver) str += `: ${arg.resolver}`;
+        if (arg.description) str += ` | ${arg.description}`;
+        return str + "}";
+      }).join(" ");
     }
   }
 }

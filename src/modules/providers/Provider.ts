@@ -15,7 +15,7 @@ export namespace Provider {
   export class DataAccessor<T> {
     public readonly client: GungnirClient;
     public constructor(public readonly access: T & {client: GungnirClient}, public readonly id: string) {
-      this.client = "client" in access ? access.client : access;
+      this.client = access.client;
     }
 
     // provider
@@ -64,7 +64,7 @@ export namespace Provider {
     public set<K extends string & keyof AccessedData<T>>(key: K, value: AccessedData<T>[K] | null) {
       return this.doAction(async () => {
         if (!this.provider) throw new GungnirError("no data provider");
-        await this.provider.set(this.id, key, value as Data | null);
+        await this.provider.set(this.id, key, value);
         this.cache.set(key, value);
       });
     }
@@ -90,11 +90,9 @@ export namespace Provider {
       public set<K extends string & keyof AccessedData<T>>(key: K, value: AccessedData<T>[K] | null | undefined) {
         if (value === undefined) delete this.data[key];
         else this.data[key] = JSON.stringify(value);
-        return this;
       }
       public clear() {
         this.data = {};
-        return this;
       }
       public get keys() {
         return Object.keys(this.data);

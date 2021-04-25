@@ -6,19 +6,28 @@ import { Resolver } from "./Resolver";
 // map
 
 export interface Resolvers {
+  // primitive
   string: string;
   integer: number;
   unsigned: number;
   natural: number;
   boolean: boolean;
 
+  // misc
   url: string;
   color: Color;
 
+  // discord
   user: User;
   channel: GuildChannel;
   member: GuildMember;
   role: Role;
+  
+  // unions
+  "member-user": GuildMember | User;
+
+  // index
+  [key: string]: unknown;
 }
 
 // primitive types
@@ -117,3 +126,6 @@ export class RoleResolver extends Resolver {
     return role;
   }
 }
+
+@Resolver.define("member-user")
+export class MemberUserResolver extends Resolver.union("member", "user") {}

@@ -22,19 +22,17 @@ type FlattenInner<T> =
 
 // string manipulation
 
-type Space = " ";
-
 export type Includes<S extends string, I extends string> =
   S extends `${string}${I}${string}` ? true : false;
-
-export type TrimLeft<S extends string> = S extends `${Space}${infer R}` ? TrimLeft<R> : S;
-export type TrimRight<S extends string> = S extends `${infer L}${Space}` ? TrimRight<L> : S;
-export type Trim<S extends string> = TrimLeft<TrimRight<S>>;
-
 export type Replace<S extends string, ToReplace extends string, Replacement extends string> =
   S extends `${infer Left}${ToReplace}${infer Right}` ?
     Replace<`${Left}${Replacement}${Right}`, ToReplace, Replacement>
     : S;
-
 export type Remove<S extends string, Remove extends string> = Replace<S, Remove, "">;
+
+
+type Space = " ";
+export type TrimLeft<S extends string> = S extends `${Space}${infer R}` ? TrimLeft<R> : S;
+export type TrimRight<S extends string> = S extends `${infer L}${Space}` ? TrimRight<L> : S;
+export type Trim<S extends string> = TrimLeft<TrimRight<S>>;
 export type RemoveSpaces<S extends string> = Remove<S, Space>;

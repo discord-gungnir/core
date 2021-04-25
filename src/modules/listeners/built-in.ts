@@ -17,18 +17,15 @@ export class LifecycleListener extends BuiltInListener {
   public async onReady() {
     try {
       if (this.client.options.owners) {
-        await Promise.all(this.client.options.owners.map(async id => {
-          const user = this.client.users.resolve(id) ??
-            await this.client.users.fetch(id);
+        await Promise.allSettled(this.client.options.owners.map(async id => {
+          const user = this.client.users.resolve(id) ?? await this.client.users.fetch(id);
           this.client.addOwner(user);
         }));
-      } else {
-        if (this.client.application?.owner) {
-          if ("members" in this.client.application.owner) {
-            for (const {user} of this.client.application.owner.members.values())
-              this.client.addOwner(user);
-          } else this.client.addOwner(this.client.application.owner);
-        }
+      } else if (this.client.application?.owner) {
+        if ("members" in this.client.application.owner) {
+          for (const {user} of this.client.application.owner.members.values())
+            this.client.addOwner(user);
+        } else this.client.addOwner(this.client.application.owner);
       }
       this.client.init();
     } catch(err) {
@@ -64,13 +61,11 @@ export class CommandsListener extends BuiltInListener {
         if (arg.optional) return undefined;
         else throw new GungnirError.Resolver(`argument '${arg.name}' is not optional`);
       }
-      for (const resolverName of arg.resolvers) {
-        const resolver = this.client.resolverHandler.get(resolverName);
-        if (!resolver) throw new GungnirError(`unknown resolver '${resolverName}'`);
-        const resolved = await resolver.resolve(value, context);
-        if (resolved !== null) return resolved;
-      }
-      throw new GungnirError.Resolver("invalid resolver input");
+      const resolver = this.client.resolverHandler.get(arg.resolver);
+      if (!resolver) throw new GungnirError(`unknown resolver '${arg.resolver}'`);
+      const resolved = await resolver.resolve(value, context);
+      if (resolved !== null) return resolved;
+      throw new GungnirError.Resolver(`argument '${arg.name}' could not be resolved`);
     }));
     if (args.length > 0)
       throw new GungnirError.Resolver("too many arguments");
@@ -162,9 +157,13 @@ export class CommandsListener extends BuiltInListener {
   public async onMessage(msg: Message) {
     try {
       if (!this.useMessages) return;
+      const prefix = await (typeof this.client.prefix == "function" ?
+        this.client.prefix(msg) : this.client.prefix);
       // todo: parse message to execute commands
     } catch(err) {
       this.client.emit("error", err);
     }
   }
 }
+
+const parseArgs = /(?:(?:"(?<double>[^"]+)")|(?:'(?<simple>[^']+)')|(?:`(?<backticks>[^`]+)`))(?=\s|$)|[^\s]+/g;
