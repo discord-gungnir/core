@@ -1,13 +1,13 @@
 import type { GungnirClient } from "../GungnirClient";
 import type { GungnirModule } from "./GungnirModule";
 
-const modules = new WeakMap<GungnirHandler<GungnirModule>, Map<string, GungnirModule>>();
-export function getModules(handler: GungnirHandler<any>) {
+const modules = new WeakMap<GungnirManager<GungnirModule>, Map<string, GungnirModule>>();
+export function getModules(handler: GungnirManager<any>) {
   if (!modules.has(handler)) modules.set(handler, new Map());
   return modules.get(handler) as Map<string, GungnirModule>;
 }
 
-export abstract class GungnirHandler<M extends GungnirModule & {handler: GungnirHandler<M>}> {
+export abstract class GungnirManager<M extends GungnirModule & {handler: GungnirManager<M>}> {
   public constructor(public readonly client: GungnirClient) {}
 
   // id

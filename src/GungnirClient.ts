@@ -15,10 +15,10 @@ export class GungnirClient extends Client {
   });
   
   public provider: Provider | null;
-  public readonly commandHandler = new Command.Handler(this);
-  public readonly listenerHandler = new Listener.Handler(this);
-  public readonly resolverHandler = new Resolver.Handler(this);
-  public readonly inhibitorHandler = new Inhibitor.Handler(this);
+  public readonly commandManager = new Command.Manager(this);
+  public readonly listenerManager = new Listener.Manager(this);
+  public readonly resolverManager = new Resolver.Manager(this);
+  public readonly inhibitorManager = new Inhibitor.Manager(this);
   public constructor(options?: GungnirClient.Options) {
     super({intents: Intents.NON_PRIVILEGED, ...options});
     this.provider = options?.provider?.(this) ?? null;

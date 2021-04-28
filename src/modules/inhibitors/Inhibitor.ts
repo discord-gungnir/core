@@ -1,6 +1,6 @@
 import type { GungnirClient } from "../../GungnirClient";
 import type { Command } from "../commands/Command";
-import { GungnirHandler } from "../GungnirHandler";
+import { GungnirManager } from "../GungnirManager";
 import type { OptionalPromise } from "../../util";
 import { GungnirError } from "../../GungnirError";
 import { GungnirModule } from "../GungnirModule";
@@ -8,13 +8,13 @@ import { GungnirModule } from "../GungnirModule";
 const inhibitors = new Map<string, Inhibitor.Constructor>();
 export abstract class Inhibitor extends GungnirModule {
   public abstract inhibit(command: Command, context: Command.Context): OptionalPromise<boolean>;
-  public constructor(public readonly handler: Inhibitor.Handler, name: string) {
+  public constructor(public readonly handler: Inhibitor.Manager, name: string) {
     super(handler, name, "inhibitor");
   }
 }
 export namespace Inhibitor {
-  export type Constructor = new (handler: Handler, name: string) => Inhibitor;
-  export type AbstractConstructor = abstract new (handler: Handler, name: string) => Inhibitor;
+  export type Constructor = new (handler: Manager, name: string) => Inhibitor;
+  export type AbstractConstructor = abstract new (handler: Manager, name: string) => Inhibitor;
   export type DefineDecorator = <T extends Constructor>(klass: T) => T;
   export type Decorator = <T extends AbstractConstructor>(klass: T) => T;
 
@@ -50,7 +50,7 @@ export namespace Inhibitor {
 
   // handler
 
-  export class Handler extends GungnirHandler<Inhibitor> {
+  export class Manager extends GungnirManager<Inhibitor> {
     public constructor(client: GungnirClient) {
       super(client);
       for (const [name, klass] of inhibitors) {

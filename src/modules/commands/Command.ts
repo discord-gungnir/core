@@ -4,7 +4,7 @@ import type { Includes, Trim, TrimLeft, TrimRight } from "../../util";
 import { MessageEmbed, Message, Guild } from "discord.js";
 import type { GungnirClient } from "../../GungnirClient";
 import type { Resolvers } from "../resolvers/built-in";
-import { GungnirHandler } from "../GungnirHandler";
+import { GungnirManager } from "../GungnirManager";
 import { GungnirError } from "../../GungnirError";
 import { GungnirModule } from "../GungnirModule";
 
@@ -18,7 +18,7 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
   
   public options: Required<Command.Options>;
   public slashCommand: ApplicationCommand | null = null;
-  public constructor(public readonly handler: Command.Handler, name: string, options?: Command.Options) {
+  public constructor(public readonly handler: Command.Manager, name: string, options?: Command.Options) {
     super(handler, name, "command");
     this.options = {
       usage: [],
@@ -87,7 +87,7 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
       name: this.name,
       description: this.description || "No description",
       options: this.usage.map(arg => {
-        const resolver = this.client.resolverHandler.get(arg.resolver);
+        const resolver = this.client.resolverManager.get(arg.resolver);
         if (!resolver) throw new GungnirError(`unknown resolver ${arg.resolver}`);
         return {
           name: arg.name,
@@ -105,8 +105,8 @@ export abstract class Command<P extends unknown[] = unknown[]> extends GungnirMo
   }
 }
 export namespace Command {
-  export type Constructor<P extends unknown[] = unknown[]> = new (handler: Handler, name: string, options?: Options) => Command<P>;
-  export type AbstractConstructor<P extends unknown[] = unknown[]> = abstract new (handler: Handler, name: string, options?: Options) => Command<P>;
+  export type Constructor<P extends unknown[] = unknown[]> = new (handler: Manager, name: string, options?: Options) => Command<P>;
+  export type AbstractConstructor<P extends unknown[] = unknown[]> = abstract new (handler: Manager, name: string, options?: Options) => Command<P>;
   export type DefineDecorator<P extends unknown[] = unknown[]> = <T extends Constructor<P>>(klass: T) => T;
   export type Decorator<P extends unknown[] = unknown[]> = <T extends AbstractConstructor<P>>(klass: T) => T;
   export type Parameters<C extends Command> = C extends Command<infer P> ? P : never;
@@ -187,7 +187,7 @@ export namespace Command {
   export function options(options: Options): Decorator {
     // @ts-expect-error
     return klass => class extends klass {
-      public constructor(handler: Handler, name: string, newerOptions?: Options) {
+      public constructor(handler: Manager, name: string, newerOptions?: Options) {
         super(handler, name, {...options, ...newerOptions});
       }
     };
@@ -268,6 +268,7 @@ export namespace Command {
       content?: string;
       embed?: MessageEmbed;
       ephemeral?: boolean;
+      tts?: boolean;
     }
   }
 
@@ -292,16 +293,16 @@ export namespace Command {
       if (typeof arg == "string") return this.send({...options, content: arg});
       else if (arg instanceof MessageEmbed) return this.send({...options, embed: arg});
       else {
-        const {content, embed, ephemeral} = arg;
+        const {content, embed, ephemeral, tts} = arg;
         if (this.#sent) {
-          const raw = await this.interaction.webhook.send(content, {embeds: embed ? [embed] : undefined});
+          const raw = await this.interaction.webhook.send(content, {embeds: embed ? [embed] : undefined, tts});
           return this.channel.messages.add(raw);
         } else if (this.interaction.deferred) {
           const msg = await this.interaction.editReply({content: content ?? null, embeds: embed ? [embed] : undefined}) as Message;
           this.#sent = true;
           return msg;
         } else {
-          await this.interaction.reply({content, embed, ephemeral});
+          await this.interaction.reply({content, embed, ephemeral, tts});
           const res = await this.interaction.fetchReply();
           return res instanceof Message ? res : this.channel.messages.add(res);
         }
@@ -326,8 +327,8 @@ export namespace Command {
     public async send(arg: string | MessageEmbed | Context.SendOptions, options?: Context.SendOptions): Promise<Message> {
       if (typeof arg == "string") return this.send({...options, content: arg});
       else if (arg instanceof MessageEmbed) return this.send({...options, embed: arg});
-      const {content, embed} = arg;
-      return this.message.channel.send({content, embed});
+      const {content, embed, tts} = arg;
+      return this.message.channel.send({content, embed, tts});
     }
   }
 
@@ -339,7 +340,7 @@ export namespace Command {
 
   // handler
 
-  export class Handler extends GungnirHandler<Command> {
+  export class Manager extends GungnirManager<Command> {
     public readonly guild: Guild | null;
     public readonly command: Command | null;
     public constructor(parent: GungnirClient | Guild | Command) {

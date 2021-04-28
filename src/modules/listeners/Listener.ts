@@ -1,5 +1,5 @@
 import type { GungnirClient } from "../../GungnirClient";
-import { GungnirHandler } from "../GungnirHandler";
+import { GungnirManager } from "../GungnirManager";
 import { GungnirError } from "../../GungnirError";
 import { GungnirModule } from "../GungnirModule";
 
@@ -12,7 +12,7 @@ interface ListenerEvent {
 const listeners = new Map<string, Listener.Constructor>();
 export abstract class Listener extends GungnirModule {
   readonly #callbacks: {event: string, callback: (...args: any[]) => any}[] = [];
-  public constructor(public readonly handler: Listener.Handler, name: string) {
+  public constructor(public readonly handler: Listener.Manager, name: string) {
     super(handler, name, "listener");
 
     let proto: Listener = (this.constructor as any).prototype;
@@ -34,8 +34,8 @@ export abstract class Listener extends GungnirModule {
   }
 }
 export namespace Listener {
-  export type Constructor = new (handler: Handler, name: string) => Listener;
-  export type AbstractConstructor = abstract new (handler: Handler, name: string) => Listener;
+  export type Constructor = new (handler: Manager, name: string) => Listener;
+  export type AbstractConstructor = abstract new (handler: Manager, name: string) => Listener;
   export type DefineDecorator = <T extends Constructor>(klass: T) => T;
   export type Decorator = <T extends AbstractConstructor>(klass: T) => T;
   export type EventMethod<E extends string> = E extends keyof GungnirClient.Events ?
@@ -104,7 +104,7 @@ export namespace Listener {
 
   // handler
 
-  export class Handler extends GungnirHandler<Listener> {
+  export class Manager extends GungnirManager<Listener> {
     public constructor(client: GungnirClient) {
       super(client);
       for (const [name, klass] of listeners) {

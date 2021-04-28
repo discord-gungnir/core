@@ -1,6 +1,6 @@
 import type { User, GuildChannel, Role } from "discord.js";
 import type { GungnirClient } from "../../GungnirClient";
-import { GungnirHandler } from "../GungnirHandler";
+import { GungnirManager } from "../GungnirManager";
 import type { Command } from "../commands/Command";
 import type { OptionalPromise } from "../../util";
 import { GungnirError } from "../../GungnirError";
@@ -11,13 +11,13 @@ const resolvers = new Map<string, Resolver.Constructor>();
 export abstract class Resolver<T extends Resolver.Type = Resolver.Type, R = unknown> extends GungnirModule {
   public abstract type: T;
   public abstract resolve(value: Resolver.Value<T>, context: Command.Context): OptionalPromise<R | null>;
-  public constructor(public readonly handler: Resolver.Handler, name: string) {
+  public constructor(public readonly handler: Resolver.Manager, name: string) {
     super(handler, name, "resolver");
   }
 }
 export namespace Resolver {
-  export type Constructor<I extends Type = Type, R = unknown> = new (handler: Handler, name: string) => Resolver<I, R>;
-  export type AbstractConstructor<I extends Type = Type, R = unknown> = abstract new (handler: Handler, name: string) => Resolver<I, R>;
+  export type Constructor<I extends Type = Type, R = unknown> = new (handler: Manager, name: string) => Resolver<I, R>;
+  export type AbstractConstructor<I extends Type = Type, R = unknown> = abstract new (handler: Manager, name: string) => Resolver<I, R>;
   export type DefineDecorator<I extends Type = Type, R = unknown> = <Y extends Constructor<I, R>>(klass: Y) => Y;
   export type Decorator<I extends Type = Type, R = unknown> = <Y extends AbstractConstructor<I, R>>(klass: Y) => Y;
   export type ResolvesTo<R extends Resolver> = R extends Resolver<any, infer T> ? T : never;
@@ -72,7 +72,7 @@ export namespace Resolver {
     return class extends Resolver<Type, Resolvers[R]> {
       public get resolvers() {
         return resolvers.map(name => {
-          const resolver = this.client.resolverHandler.get(name);
+          const resolver = this.client.resolverManager.get(name);
           if (!resolver) throw new GungnirError(`unknown resolver '${name}'`);
           else return resolver;
         });
@@ -96,7 +96,7 @@ export namespace Resolver {
 
   // handler
 
-  export class Handler extends GungnirHandler<Resolver> {
+  export class Manager extends GungnirManager<Resolver> {
     public constructor(client: GungnirClient) {
       super(client);
       for (const [name, klass] of resolvers) {
